@@ -1,2 +1,6 @@
-all-bwsd
 *.swp
+*.o
+lib/*.o
+external/*.o
+dataset/sdsl/
+all-bwsd

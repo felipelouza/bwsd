@@ -12,7 +12,7 @@
                                                                                                          
 #include <iostream>                                                                                      
                                                                                                          
-using namespace sdsl;                                                                                    
+using namespace sdsl;
 using namespace std;  
 
 #include <cstdio>
@@ -26,20 +26,22 @@ using namespace std;
 #include "external/malloc_count/malloc_count.h"
 #include "external/gsacak.h"
 
-
 #ifndef DEBUG
-	#define DEBUG 0 
+	#define DEBUG 1 
 #endif
 
 #ifndef TIME
   #define TIME 1
 #endif
 
+typedef map<uint32_t, uint32_t> tMII;
+typedef vector<tMII> tVMII;
+
 /******************************************************************************/
 
 unsigned char* cat_char(unsigned char** R, int k, int_t *n);
 
-int compute_all_bwsd_wt(unsigned char *s, uint_t k, uint_t n);//algorithm 1
+int compute_all_bwsd_wt(unsigned char *s, uint_t k, uint_t n, char* c_file);//algorithm 1
 
 int compute_all_bwsd_rmq(unsigned char *s, uint_t k, uint_t n);//Simon's algorithm 
 
@@ -65,7 +67,6 @@ int main(int argc, char** argv){
 	sscanf(argv[3], "%d", &k);
 	sscanf(argv[4], "%u", &MODE);
 	sscanf(argv[5], "%u", &CHECK);
-
 
 	file_chdir(c_dir);
 
@@ -99,7 +100,7 @@ int main(int argc, char** argv){
 
 		case 1: printf("## BWSD_WT ##\n"); 
 			time_start(&t_start, &c_start);
-			compute_all_bwsd_wt(str, k, n);
+			compute_all_bwsd_wt(str, k, n, c_file);
 			printf("TOTAL:\n");
 			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
@@ -158,73 +159,156 @@ return str;
 }
 /******************************************************************************/
 
-int compute_all_bwsd_wt(unsigned char *s, uint_t k, uint_t n){
+int compute_all_bwsd_wt(unsigned char *s, uint_t k, uint_t n, char* c_file){
 
 	int_t i;
 
+	string dir = "sdsl";
+	mkdir(dir.c_str());
+	string id = c_file;
+	id += "."+to_string(k);
+
+	cache_config m_config(true, dir, id);
+	int_vector<> da(n);
+
 	#if TIME
-    time_t t_start=0;clock_t c_start=0;
+	  time_t t_start=0;clock_t c_start=0;
 		time_start(&t_start, &c_start); 
 	#endif
 
-  uint_t *SA = (uint_t*) malloc(n*sizeof(uint_t));
-  int_t *DA = (int_t*) malloc(n*sizeof(int_t));
+	//COMPUTE DA:
+	if(!load_from_cache(da, "da", m_config)){
 
-  for(i=0; i<n; i++) SA[i]=DA[i]=0;
-
-  gsacak(s, SA, NULL, DA, (uint_t)n); //construct SA+DA
-
-	#if TIME
-		printf("1. BUILD SA+DA:\n");
-		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
-	#endif
-
-  #if DEBUG
-    s[n-1]='#'+1;
-    printf("i) DA\tSA\tBWT\tsuffixes\n");
-    for(i=0; i<min(n,20); i++){
-      printf("%" PRIdN ") %" PRIdN "\t%" PRIdN "\t", i, DA[i], SA[i]);
-      char bwt = SA[i]>0?s[SA[i]-1]:'$';
-      if(bwt==1)bwt='$'+1;
-      printf("%c\t", bwt-1);
-      for(int_t j=SA[i]; j< min(n,SA[i]+10); j++)
-        if(s[j]==1) printf("$");
-        else printf("%c", s[j]-1);
-      printf("\n");
-    }
-  #endif
-
-
-	int_vector<> da(n);
-	for(i=0;i<n;i++) da[i]=DA[i];
-	wt_int<> wt;
-
-	construct_im(wt, da);
+		int_t *SA = new int_t[n];
+		int_t *DA = new int_t[n];
+		
+		for(i=0; i<n; i++) SA[i]=DA[i]=0;
+		gsacak(s, (uint_t*)SA, NULL, DA, (uint_t)n); //construct SA+DA
 	
+		for(i=0;i<n;i++) da[i]=DA[i];
+		store_to_cache(da, "da", m_config);
+
+		delete[] SA;
+		delete[] DA;
+	}
+
 	#if TIME
-		printf("2. BUILD WT(DA):\n");
+		printf("#1. DA:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 	#endif
 
+	wt_int<> wt;
+	//COMPUTE WT(DA):
+	if(!load_from_cache(wt, "wt", m_config)){
+		construct_im(wt, da);
+		store_to_cache(wt, "wt", m_config);
+	}
+
+	#if TIME
+		printf("#2. WT(DA):\n");
+		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
+	#endif
+
+/**/
+	for(int_t i=0; i<n-1; i++) cout << wt[i] << ", ";
+	cout<<wt[n-1]<<"\t("<<n-1<<")"<<endl;
+/**/
+
+	//for(int_t i=0; i<k-1; i++){
+	for(int_t i=0; i<1; i++){
+
+		int_t qs = 0, qe=0;
+		uint64_t len = wt.rank(wt.size(), i);
+	  
+		tVMII F(k);
+
+/*
+		//foreach S^j in j+1..k
+		for(int_t j=i+1; j<k; j++){
+			
+		}
+*/
+
+		#if DEBUG
+			cout<<"i = "<<i<<", "<<len<<endl;
+		#endif
+
+		int_t *ell = new int_t[n];
+		for(int_t j=i+1; j<k; j++) ell[j]=0;
+
+		//forloop S^i[1..n_i]
+		for(uint64_t p=1; p<len+1; p++){
+		
+			qe = wt.select(p, i);
+
+			#if DEBUG
+				cout << "[" <<qs <<", "<<qe << "]   \t0^1"<<endl;
+			#endif
 
 
-	cout << "wt.size()="<< wt.size() << endl;
-	cout << "wt.sigma ="<< wt.sigma << endl;
-	if (wt.size() > 0) {
-	    // access an element
-	    cout << "wt[0]=" << wt[0] << endl;
-	    // rank an element (exclude)
-	    uint64_t r = wt.rank(wt.size(), wt[0]);
-	    cout << "wt.rank(wt.size(), wt[0])=" << r  << endl;
-	    // select element ()
-	    cout << "wt.select(r, wt[0]) = " << wt.select(r, wt[0]) << endl;
-	}	
+			//foreach S^j in j+1..k
+			for(int_t j=i+1; j<k; j++){
 
+				int_t kj = wt.rank(qe,j) - wt.rank(qs,j);
+				#if DEBUG
+					cout << "###"<< j << ":\t1^"<< kj << endl;
+				#endif
 
+				if(kj>0){
+					F[j][kj]++; //1^kj
+					F[j][1]++;  //0^1
+					ell[j]=1;
+				}
+				else{
+			
+					if(p==1) F[j][1]++;
+					else{
+						F[j][ell[j]]--; //1^kj
+						F[j][ell[j]+1]++;  //0^1
+					}
+					ell[j]++;
+				}
+			}
 
+			qs=qe+1;
+		}
 
-  free(SA);
-  free(DA);
+		//last iteration
+		{
+			qe=n;
+
+			#if DEBUG
+				cout << "[" <<qs <<", "<<qe << "]"<<endl;
+			#endif
+			for(int_t j=i+1; j<k; j++){
+
+				int_t kj = wt.rank(qe,j) - wt.rank(qs,j);
+				#if DEBUG
+					cout << "***"<< j << ":\t1^"<< kj << endl;
+				#endif
+
+				if(kj>0){
+					F[j][kj]++; //1^kj
+				}
+			}
+		}
+		
+		cout<<"\n####\n";
+		//output
+		for(int_t j=i+1; j<k; j++){
+
+			for(int_t p=0; p<n;p++) 
+				if(da[p]==i || da[p]==j) cout<<da[p]<<"^1 "; 
+
+			cout<<"("<<i<<", "<<j<<")\n";
+
+			for(tMII::iterator it=F[j].begin(); it!=F[j].end(); ++it)
+				cout << "#^" << it->first << ":\t" << it->second <<endl;
+
+			cout<<"####\n";
+		}		
+	}
+
 
 return 0;
 }

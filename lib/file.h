@@ -34,6 +34,8 @@ int_t file_text_int_read(int_t** str, char* c_file, const char* ext);
 int file_bwt_write(unsigned char *str, int_t *SA, int_t n, char* c_file, const char* ext);
 int file_bwt_int_write(int_t *str_int, int_t *SA, int_t n, char* c_file, const char* ext);
 
+void mkdir(const char* c_file);
+
 /*******************************************************************/
 
 

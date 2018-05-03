@@ -246,7 +246,20 @@ char** file_load_multiple(char* c_file, int k, int_t *n) {
 return c_buffer;
 }
 
-/*******************************************************************/
+/**********************************************************************/
+
+void mkdir(const char* c_file){
+	
+	char c_aux[500];
+	
+	strcpy (c_aux,"mkdir -p ");
+	strcat (c_aux, c_file);
+			
+	system (c_aux);//remove .bin
+	
+}
+
+/**********************************************************************/
 
 int file_text_write(unsigned char *str, int_t n, char* c_file, const char* ext){
 

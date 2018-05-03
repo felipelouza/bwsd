@@ -21,7 +21,7 @@ LIBOBJ = \
 ##
 
 M64 = 0
-DEBUG = 0
+DEBUG = 1
 CHECK = 1
 TIME = 1
 
@@ -41,7 +41,7 @@ CFLAGS += $(DEFINES)
 DIR = dataset/
 INPUT = input.100.txt
 
-K	= 1
+K	= 3
 MODE 	= 1
 CHECK	= 1
 OUTPUT	= 0
@@ -62,7 +62,7 @@ lib: lib/file.c lib/utils.c external/gsacak.c external/malloc_count/malloc_count
 
 
 compile: lib main.cpp ${LIBOBJ} 
-	$(MY_CXX) $(CXX_FLAGS) -Wextra main.cpp $(CCLIB) -o all-bwsd ${LIBOBJ} 
+	$(MY_CXX) $(CXX_FLAGS) main.cpp $(CCLIB) -o all-bwsd ${LIBOBJ} 
 
 run:
 	./all-bwsd $(DIR) $(INPUT) $(K) $(MODE) $(CHECK)
