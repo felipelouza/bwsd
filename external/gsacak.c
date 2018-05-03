@@ -7,6 +7,8 @@ const uint_t EMPTY_k=((uint_t)1)<<(sizeof(uint_t)*8-1);
 // get s[i] at a certain level
 #define chr(i) (cs==sizeof(int_t)?((int_t*)s)[i]:((unsigned char *)s)[i])
 
+#define max(a,b) ((a) > (b) ? (a) : (b))
+
 #define true 1
 #define false 0
 

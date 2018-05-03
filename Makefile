@@ -23,17 +23,18 @@ LIBOBJ = \
 M64 = 0
 DEBUG = 0
 CHECK = 1
+TIME = 1
 
 ##
 
-LFLAGS = -lm -lrt -ldl
+LFLAGS = -lm -ldl
 
-DEFINES = -DDEBUG=$(DEBUG) -DM64=$(M64)
+DEFINES = -DDEBUG=$(DEBUG) -DM64=$(M64) -DTIME=$(TIME)
 
 CXX_FLAGS=$(MY_CXX_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR) -L$(LIB_DIR) $(LFLAGS) $(DEFINES)
 
 CLAGS= -DSYMBOLBYTES=1
-
+CFLAGS += $(DEFINES)
 
 ##
 
@@ -47,10 +48,6 @@ OUTPUT	= 0
 
 ##
 
-DEFINES = -DDEBUG=$(DEBUG) -DM64=$(M64) 
-
-CFLAGS += $(DEFINES)
-
 all: compile
 
 clean:
@@ -58,7 +55,7 @@ clean:
 
 ##
 
-lib: lib/file.c lib/utils.c external/gsacak.c external/malloc_count/malloc_count.o
+lib: lib/file.c lib/utils.c external/gsacak.c external/malloc_count/malloc_count.o 
 	$(MY_CXX) $(CXX_FLAGS) $(DEFINES) -c lib/file.c -o lib/file.o 
 	$(MY_CXX) $(CXX_FLAGS) $(DEFINES) -c lib/utils.c -o lib/utils.o 
 	$(MY_CXX) $(CXX_FLAGS) $(DEFINES) -c external/gsacak.c -o external/gsacak.o 
@@ -66,10 +63,9 @@ lib: lib/file.c lib/utils.c external/gsacak.c external/malloc_count/malloc_count
 
 compile: lib main.cpp ${LIBOBJ} 
 	$(MY_CXX) $(CXX_FLAGS) -Wextra main.cpp $(CCLIB) -o all-bwsd ${LIBOBJ} 
-#	$(CC) $(CFLAGS) $(LFLAGS) -o main main.c ${LIBOBJ}
 
 run:
-	./main $(DIR) $(INPUT) $(K) $(MODE) $(CHECK)
+	./all-bwsd $(DIR) $(INPUT) $(K) $(MODE) $(CHECK)
 
 valgrind:
-	valgrind --tool=memcheck --leak-check=full --track-origins=yes ./main $(DIR) $(INPUT) $(K) $(MODE) $(CHECK)
+	valgrind --tool=memcheck --leak-check=full --track-origins=yes ./all-bwsd $(DIR) $(INPUT) $(K) $(MODE) $(CHECK)
