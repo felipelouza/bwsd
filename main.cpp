@@ -43,7 +43,7 @@ unsigned char* cat_char(unsigned char** R, int k, int_t *n);
 
 int compute_all_bwsd_wt(unsigned char *s, uint_t k, uint_t n, char* c_file);//algorithm 1
 
-int compute_all_bwsd_rmq(unsigned char *s, uint_t k, uint_t n);//Simon's algorithm 
+int compute_all_bwsd_rmq(unsigned char *s, uint_t k, uint_t n, char* c_file);//Simon's algorithm 
 
 /******************************************************************************/
 
@@ -209,10 +209,11 @@ int compute_all_bwsd_wt(unsigned char *s, uint_t k, uint_t n, char* c_file){
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 	#endif
 
-/**/
+	/**/
+	cout<<"DA:"<<endl
 	for(int_t i=0; i<n-1; i++) cout << wt[i] << ", ";
 	cout<<wt[n-1]<<"\t("<<n-1<<")"<<endl;
-/**/
+	/**/
 
 	//for(int_t i=0; i<k-1; i++){
 	for(int_t i=0; i<1; i++){
@@ -221,13 +222,6 @@ int compute_all_bwsd_wt(unsigned char *s, uint_t k, uint_t n, char* c_file){
 		uint64_t len = wt.rank(wt.size(), i);
 	  
 		tVMII F(k);
-
-/*
-		//foreach S^j in j+1..k
-		for(int_t j=i+1; j<k; j++){
-			
-		}
-*/
 
 		#if DEBUG
 			cout<<"i = "<<i<<", "<<len<<endl;
@@ -275,26 +269,22 @@ int compute_all_bwsd_wt(unsigned char *s, uint_t k, uint_t n, char* c_file){
 
 		//last iteration
 		{
-			qe=n;
-
 			#if DEBUG
-				cout << "[" <<qs <<", "<<qe << "]"<<endl;
+				cout << "[" <<qs <<", "<<n<< "]"<<endl;
 			#endif
 			for(int_t j=i+1; j<k; j++){
 
-				int_t kj = wt.rank(qe,j) - wt.rank(qs,j);
+				int_t kj = wt.rank(n,j) - wt.rank(qs,j);
+				if(kj>0) F[j][kj]++; //1^kj
+
 				#if DEBUG
 					cout << "***"<< j << ":\t1^"<< kj << endl;
 				#endif
-
-				if(kj>0){
-					F[j][kj]++; //1^kj
-				}
 			}
 		}
 		
 		cout<<"\n####\n";
-		//output
+		//output (tmp)
 		for(int_t j=i+1; j<k; j++){
 
 			for(int_t p=0; p<n;p++) 
@@ -312,4 +302,13 @@ int compute_all_bwsd_wt(unsigned char *s, uint_t k, uint_t n, char* c_file){
 
 return 0;
 }
+/******************************************************************************/
+
+int compute_all_bwsd_rmq(unsigned char *s, uint_t k, uint_t n, char* c_file);{//Simon's algorithm 
+
+
+
+return 0;
+}
+
 /******************************************************************************/
