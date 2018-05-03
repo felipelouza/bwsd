@@ -21,7 +21,7 @@ LIBOBJ = \
 ##
 
 M64 = 0
-DEBUG = 1
+DEBUG = 0
 CHECK = 1
 TIME = 1
 

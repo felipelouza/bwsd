@@ -27,7 +27,7 @@ using namespace std;
 #include "external/gsacak.h"
 
 #ifndef DEBUG
-	#define DEBUG 1 
+	#define DEBUG 0 
 #endif
 
 #ifndef TIME
@@ -210,13 +210,12 @@ int compute_all_bwsd_wt(unsigned char *s, uint_t k, uint_t n, char* c_file){
 	#endif
 
 	/**/
-	cout<<"DA:"<<endl
+	cout<<"DA:"<<endl;
 	for(int_t i=0; i<n-1; i++) cout << wt[i] << ", ";
 	cout<<wt[n-1]<<"\t("<<n-1<<")"<<endl;
 	/**/
 
-	//for(int_t i=0; i<k-1; i++){
-	for(int_t i=0; i<1; i++){
+	for(int_t i=0; i<k-1; i++){
 
 		int_t qs = 0, qe=0;
 		uint64_t len = wt.rank(wt.size(), i);
@@ -283,20 +282,25 @@ int compute_all_bwsd_wt(unsigned char *s, uint_t k, uint_t n, char* c_file){
 			}
 		}
 		
-		cout<<"\n####\n";
+		cout<<"\n####\t";
 		//output (tmp)
 		for(int_t j=i+1; j<k; j++){
 
+			cout<<"("<<i<<", "<<j<<")\n";
 			for(int_t p=0; p<n;p++) 
 				if(da[p]==i || da[p]==j) cout<<da[p]<<"^1 "; 
+			cout<<endl;
 
-			cout<<"("<<i<<", "<<j<<")\n";
 
 			for(tMII::iterator it=F[j].begin(); it!=F[j].end(); ++it)
-				cout << "#^" << it->first << ":\t" << it->second <<endl;
+				if(it->second)
+					cout << "#^" << it->first << ":\t" << it->second <<endl;
 
-			cout<<"####\n";
+			cout<<"####\t";
 		}		
+		cout<<endl;
+
+		delete[] ell;
 	}
 
 
@@ -304,7 +308,7 @@ return 0;
 }
 /******************************************************************************/
 
-int compute_all_bwsd_rmq(unsigned char *s, uint_t k, uint_t n, char* c_file);{//Simon's algorithm 
+int compute_all_bwsd_rmq(unsigned char *s, uint_t k, uint_t n, char* c_file){//Simon's algorithm 
 
 
 
