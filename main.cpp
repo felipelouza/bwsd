@@ -2,7 +2,7 @@
  * BWSD 
  *
  * Authors: Felipe A. Louza, Simon Gog 
- * contact: louza@ic.unicamp.br
+ * contact: louza@usp.br
  * 02/05/2018
  *
  */
@@ -38,8 +38,17 @@ using namespace std;
   #define TIME 1
 #endif
 
+#ifndef SAVE_SPACE 
+  #define SAVE_SPACE 1
+#endif
+
 typedef map<uint32_t, uint32_t> tMII;
+
+#if SAVE_SPACE
 typedef vector<tMII> tVMII;
+#else
+typedef uint_t** tVMII;
+#endif
 
 /******************************************************************************/
 
@@ -190,6 +199,10 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 	printf("N = %" PRIdN " bytes\n", n);
 	printf("sizeof(int) = %zu bytes\n", sizeof(int_t));
 
+	#if SAVE_SPACE
+		cout<<"SAVE_SPACE"<<endl;
+	#endif
+
 	#if DEBUG
 		printf("R:\n");
 		for(i=0; i<k; i++)
@@ -257,50 +270,97 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 	cout<<wt[n-1]<<"\t("<<n-1<<")"<<endl;
 	*/
 
+/*
+	int_t *first = new int_t[k];
+	for(int_t i=0; i<k; i++) first[i]=n;
+
+	int_t *next = new int_t[n];
+	for(int_t i=n-1; i>0; i--){
+		//if(first[da[i]]) next[i]=first[da[i]];
+		//else next[i]=n;
+		next[i]=first[da[i]];
+		first[da[i]]=i;
+	}
+*/
+
+	int_t *ell = new int_t[k];
+	int_t *rank = new int_t[k];
+
 	for(int_t i=0; i<k-1; i++){
 
 		int_t qs = 0, qe=0;
-		uint64_t len = wt.rank(wt.size(), i);
+		uint64_t len_i = wt.rank(wt.size(), i);
 	  
-		tVMII result(k);
 
-		#if DEBUG
-			cout<<"i = "<<i<<", "<<len<<endl;
+		//init
+		#if SAVE_SPACE
+			tVMII result(k);
+		#else
+/*
+			uint_t** result = new uint_t*[k];
+			for(int_t j=i+1; j<k; j++){
+
+				uint64_t len_j = wt.rank(wt.size(), j);
+				uint_t total = 2*(min(len_i, len_j)+1);
+
+cout<<"("<<i<<", "<<j<<")\n";
+cout<<"("<<len_i<<", "<<len_j<<")\n##\n";
+
+				result[j] = new uint_t [total];
+				for(int_t r=0; r<total; r++) 
+					result[j][r] = 0;
+			}
+*/
 		#endif
 
-		int_t *ell = new int_t[n];
-		for(int_t j=i+1; j<k; j++) ell[j]=0;
+		#if DEBUG
+			cout<<"i = "<<i<<", "<<len_i<<endl;
+		#endif
+
+		/**/
+
+		for(int_t j=i+1; j<k; j++) rank[j] = ell[j]=0;
+
+		/**/
+
+//		if(first[i]!=wt.select(1, i)) cout<<"ERROR"<<endl;
 
 		//forloop S^i[1..n_i]
-		for(uint64_t p=1; p<len+1; p++){
+		for(uint64_t p=1; p<len_i+1; p++){
 		
 			qe = wt.select(p, i);//TODO: replace qe
+			
+/*
+			if(p==1) qe=first[i];
+			else qe=next[qe];
+*/
+//		if(qe!=wt.select(p, i)) cout<<"ERROR"<<endl;
 
 			#if DEBUG
 				cout << "[" <<qs <<", "<<qe << "]   \t0^1"<<endl;
 			#endif
 
-
 			//foreach S^j in j+1..k
 			for(int_t j=i+1; j<k; j++){
 
-				int_t kj = wt.rank(qe,j) - wt.rank(qs,j);//TODO: reduce 1 rank-query
+				//int_t kj = wt.rank(qe,j) - wt.rank(qs,j);//TODO: reduce 1 rank-query
+				int_t occ = wt.rank(qe,j);
+				int_t kj = occ - rank[j];
+
+//if(rank[j]!=wt.rank(qs,j))cout<<"ERROR"<<endl;
+
+				rank[j]=occ;
+
 				#if DEBUG
 					cout << "###"<< j << ":\t1^"<< kj << endl;
 				#endif
 
 				if(kj>0){
 					result[j][kj]++; //1^kj
-					result[j][1]++;  //0^1
+					result[j][ell[j]]++;  //0^1
 					ell[j]=1;
 				}
 				else{
-			
-					if(p==1) result[j][1]++;
-					else{
-						result[j][ell[j]]--; //1^kj
-						result[j][ell[j]+1]++;  //0^1
-					}
 					ell[j]++;
 				}
 			}
@@ -315,14 +375,18 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 			#endif
 			for(int_t j=i+1; j<k; j++){
 
-				int_t kj = wt.rank(n,j) - wt.rank(qs,j);
-				if(kj>0) result[j][kj]++; //1^kj
+				//int_t kj = wt.rank(n,j) - wt.rank(qs,j);
+				int_t kj = wt.rank(n,j) - rank[j];
+				if(kj>0) 
+					result[j][kj]++; //1^kj
+				result[j][ell[j]]++;  //0^1
 
 				#if DEBUG
 					cout << "***"<< j << ":\t1^"<< kj << endl;
 				#endif
 			}
 		}
+
 		#if OUTPUT
 			cout<<"\n####\t";
 
@@ -348,9 +412,17 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 				}
 				cout<<endl;
 
-				for(tMII::iterator it=result[j].begin(); it!=result[j].end(); ++it)
-					if(it->second)
-						cout << "#^" << it->first << ":\t" << it->second <<endl;
+				#if SAVE_SPACE
+					for(tMII::iterator it=result[j].begin(); it!=result[j].end(); ++it)
+						if(it->second)
+							cout << "#^" << it->first << ":\t" << it->second <<endl;
+				#else
+/*
+					for(int_t r=0; r<; ++it)
+						if(it->second)
+							cout << "#^" << it->first << ":\t" << it->second <<endl;
+*/
+				#endif
 
 				cout<<"####\t";
 			}		
@@ -359,8 +431,10 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		#endif
 
 
-		delete[] ell;
 	}
+
+	delete[] ell;
+	delete[] rank;
 
 	#if TIME
 		printf("#3. ALL-BWSD:\n");

@@ -24,12 +24,13 @@ M64 = 0
 DEBUG = 0
 CHECK = 1
 TIME = 1
+OUTPUT = 0
 
 ##
 
 LFLAGS = -lm -ldl
 
-DEFINES = -DDEBUG=$(DEBUG) -DM64=$(M64) -DTIME=$(TIME)
+DEFINES = -DDEBUG=$(DEBUG) -DM64=$(M64) -DTIME=$(TIME) -DOUTPUT=$(OUTPUT)
 
 CXX_FLAGS=$(MY_CXX_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR) -L$(LIB_DIR) $(LFLAGS) $(DEFINES)
 
@@ -39,7 +40,8 @@ CFLAGS += $(DEFINES)
 ##
 
 DIR = dataset/
-INPUT = input.100.txt
+#INPUT = input.100.txt
+INPUT = reads-10000.fastq
 
 K	= 3
 MODE 	= 1
