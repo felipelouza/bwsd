@@ -277,7 +277,9 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 	
 	free(str);
 
-	tVMID	result(k);
+	#if OUTPUT
+		tVMID	result(k);
+	#endif
 
 	#if TIME
 		printf("#1. DA:\n");
@@ -473,16 +475,18 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 	#endif
 
 	#if DEBUG
-	for(int_t i=0; i<k; i++){
-		for(int_t j=0; j<i; j++){
-			printf("%.2lf\t", result[j][i]);
-		}
-		printf("0.00\t");
-		for(int_t j=i+1; j<k; j++){
-			printf("%.2lf\t", result[i][j]);
-		}
-		cout<<endl;
-	}
+		#if OUTPUT
+			for(int_t i=0; i<k; i++){
+				for(int_t j=0; j<i; j++){
+					printf("%.2lf\t", result[j][i]);
+				}
+				printf("0.00\t");
+				for(int_t j=i+1; j<k; j++){
+					printf("%.2lf\t", result[i][j]);
+				}
+				cout<<endl;
+			}
+		#endif
 	#endif
 
 
@@ -592,16 +596,18 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 	free(R);
 
 	#if DEBUG
-	for(int_t i=0; i<k; i++){
-		for(int_t j=0; j<i; j++){
-			printf("%.2lf\t", result[j][i]);
-		}
-		printf("0.00\t");
-		for(int_t j=i+1; j<k; j++){
-			printf("%.2lf\t", result[i][j]);
-		}
-		cout<<endl;
-	}
+		#if OUTPUT
+			for(int_t i=0; i<k; i++){
+				for(int_t j=0; j<i; j++){
+					printf("%.2lf\t", result[j][i]);
+				}
+				printf("0.00\t");
+				for(int_t j=i+1; j<k; j++){
+					printf("%.2lf\t", result[i][j]);
+				}
+				cout<<endl;
+			}
+		#endif
 	#endif
 
 return 0;
