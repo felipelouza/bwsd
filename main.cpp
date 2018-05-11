@@ -288,7 +288,8 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 
 	//COMPUTE WT(DA):
 	/**/
-	wt_int<> wt;
+	//wt_int<> wt;
+	wm_int<> wt;
 	if(!load_from_cache(wt, "wt", m_config)){
 		construct_im(wt, da);
 		store_to_cache(wt, "wt", m_config);
