@@ -306,29 +306,42 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		cout<<wt[n-1]<<"\t("<<n-1<<")"<<endl;
 	#endif
 
-/*
-	int_t *first = new int_t[k];
-	for(int_t i=0; i<k; i++) first[i]=n;
-	int_t *next = new int_t[n];
-	for(int_t i=n-1; i>0; i--){
-		//if(first[da[i]]) next[i]=first[da[i]];
-		//else next[i]=n;
-		next[i]=first[da[i]];
-		first[da[i]]=i;
+	//avoid second wt.rank()
+	int_t *tmp = new int_t[k+1];
+
+	//avoid wt.rank()-queries when next > qe
+	int_t **pos = new int_t*[k+1];
+	
+	for(int_t i=0; i<k; i++){
+		tmp[i]=0;
+		uint64_t len = wt.rank(wt.size(), i);   
+		pos[i] = new int[len+1];
 	}
+	
+	for(int_t i=1; i<n; i++){
+		pos[da[i]][tmp[da[i]]]=i;
+		tmp[da[i]]++;
+	}
+	
+	for(int_t i=0; i<k; i++) pos[i][tmp[i]]=n;
+
+	int skip=0;
+	int total=0;
+
+/*
+	int_t *size = new int_t[k];
+	for(int_t i=0; i<k; i++) size[i]=wt.rank(wt.size(), i);
 */
 
 	int_t *s= new int_t[k];
-
 	int_t *ell = new int_t[k];
-	int_t *rank = new int_t[k];
 
 	for(int_t i=0; i<k-1; i++){
 
 		//int_t qs, qe=0;
 		int_t qe=0;
 		uint64_t len_i = wt.rank(wt.size(), i);
-	  
+		//uint64_t len_i = size[i];
 
 		//init
 		#if SAVE_SPACE
@@ -355,7 +368,9 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 			cout<<"i = "<<i<<", "<<len_i<<endl;
 		#endif
 
-		for(int_t j=i+1; j<k; j++) s[j] = rank[j] = ell[j]=0;
+		for(int_t j=i+1; j<k; j++) s[j] = tmp[j] = ell[j]=0;
+	
+//		for(int_t j=i+1; j<k; j++) next[j]= pos[j][0]; //wt.select(1, i);
 
 		//forloop S^i[1..n_i]
 		for(uint64_t p=1; p<len_i+1; p++){
@@ -370,12 +385,42 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 
 			for(int_t j=i+1; j<k; j++){
 
+total++;
+
+/*
+if(tmp[j]==size[j]){//jump
+ell[j]++;
+continue;
+}
+*/
+
+//if(next[j]!=pos[j][tmp[j]]) cout<<"OPA\n";
+	
+//if(next[j]>qe){//jump
+if(pos[j][tmp[j]]>qe){//jump
+ell[j]++;
+skip++;
+continue;
+}
 				int_t occ = wt.rank(qe,j);
-				int_t kj = occ - rank[j];
+				int_t kj = occ - tmp[j];
 
 				//int_t kj = wt.rank(qe,j) - wt.rank(qs,j);//TODO: reduce 1 rank-query
-				//if(rank[j]!=wt.rank(qs,j))cout<<"ERROR"<<endl;
-				rank[j]=occ;
+				//if(tmp[j]!=wt.rank(qs,j))cout<<"ERROR"<<endl;
+				tmp[j]=occ;
+
+
+//if(occ<size[j])
+//	next[j]=pos[j][occ];
+////	next[j]=wt.select(occ+1, j);
+//else
+//	next[j]=n;
+
+/*
+if(occ<size[j])
+else
+	next[j]=n;
+*/
 
 				#if DEBUG == 2
 					cout << "###"<< j << ":\t1^"<< kj << endl;
@@ -388,9 +433,11 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 
 					s[j]+=2;
 				}
+/*
 				else{
 					ell[j]++;
 				}
+*/
 			}
 		}
 
@@ -402,7 +449,7 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 			for(int_t j=i+1; j<k; j++){
 
 				//int_t kj = wt.rank(n,j) - wt.rank(qs,j);
-				int_t kj = wt.rank(n,j) - rank[j];
+				int_t kj = wt.rank(n,j) - tmp[j];
 				if(kj>0){
 					t[j][kj]++; //1^kj
 					s[j]++;
@@ -413,20 +460,21 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 				#if DEBUG == 2
 					cout << "***"<< j << ":\t1^"<< kj << endl;
 				#endif
+
+	
+				#if OUTPUT
+					result[i][j] = compute_distance(t[j], s[j]);
+					#if DEBUG
+						cout<<"["<<i<<", "<<j<<"]\t\ts="<<s[j]<<"\n";
+						cout<<"D = "<<result[i][j]<<endl;
+					#endif
+				#endif
+
 			}
 		}
 
-		#if OUTPUT
-		for(int_t j=i+1; j<k; j++){
-			result[i][j] = compute_distance(t[j], s[j]);
-			#if DEBUG
-				cout<<"["<<i<<", "<<j<<"]\t\ts="<<s[j]<<"\n";
-				cout<<"D = "<<result[i][j]<<endl;
-			#endif
-		}
-		#endif
-
 		#if DEBUG
+			cout<<"sum = "<<skip<<" / "<<total<<" = "<<(double)skip/(double)total<<endl;
 			cout<<"\n####\t";
 
 			//output (tmp)
@@ -466,14 +514,19 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		#endif
 	}
 
-	delete[] ell;
-	delete[] s;
-	delete[] rank;
-
 	#if TIME
 		printf("#3. ALL-BWSD:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 	#endif
+
+	delete[] ell;
+	delete[] s;
+	delete[] tmp;
+//	delete[] next;
+
+	for(int_t i=0; i<k; i++) delete[] pos[i];
+	delete[] pos;
+
 
 	#if DEBUG
 		#if OUTPUT
@@ -488,6 +541,17 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 				cout<<endl;
 			}
 		#endif
+	#endif
+
+
+	//checksum: for the sake of sanity
+	#if OUTPUT
+		double sum=0.0;
+		for(int_t i=0; i<k; i++)
+			for(int_t j=i+1; j<k; j++)
+				sum+=result[i][j];
+
+		printf("checksum = %lf\n",sum);
 	#endif
 
 
@@ -609,6 +673,16 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 				cout<<endl;
 			}
 		#endif
+	#endif
+
+	//checksum: for the sake of sanity
+	#if OUTPUT
+		double sum=0.0;
+		for(int_t i=0; i<k; i++)
+			for(int_t j=i+1; j<k; j++)
+				sum+=result[i][j];
+
+		printf("checksum = %lf\n",sum);
 	#endif
 
 return 0;
