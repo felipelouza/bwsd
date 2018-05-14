@@ -315,31 +315,28 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 	#endif
 
 
-/**/
-
 	//avoid second wt.rank()
 	int_t *rank = new int_t[k+1];
 
-	//avoid wt.rank()-queries when next > qe
-	int_t **pos = new int_t*[k+1];
-	
-	for(int_t i=0; i<k; i++){
-		rank[i]=0;
-		uint64_t len = wt.rank(wt.size(), i);   
-		pos[i] = new int[len+1];
-	}
-	
-	for(int_t i=1; i<n; i++){
-		pos[da[i]][rank[da[i]]]=i;
-		rank[da[i]]++;
-	}
-	
-	for(int_t i=0; i<k; i++) pos[i][rank[i]]=n;
+	#if OPT_VERSION 
+		//avoid wt.rank()-queries when next > qe
+		int_t **pos = new int_t*[k+1];
+		
+		for(int_t i=0; i<k; i++){
+			rank[i]=0;
+			uint64_t len = wt.rank(wt.size(), i);   
+			pos[i] = new int[len+1];
+		}
+		
+		for(int_t i=1; i<n; i++){
+			pos[da[i]][rank[da[i]]]=i;
+			rank[da[i]]++;
+		}
+		
+		for(int_t i=0; i<k; i++) pos[i][rank[i]]=n+1;
 
-	#if OPT_VERSION
 		int_t skip=0, total=0;
 	#endif
-/**/
 
 	int_t *s= new int_t[k];
 	int_t *ell = new int_t[k];
@@ -367,8 +364,12 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 				cout << "[" <<qe <<", "<< wt.select(p, i) << "]   \t0^1"<<endl;
 			#endif
 		
-			//qe = wt.select(p, i);//TODO: replace qe
-			qe = pos[i][p-1];
+			#if OPT_VERSION
+				qe = pos[i][p-1];
+			#else
+				qe = wt.select(p, i);
+			#endif
+
 			if(qe!=wt.select(p, i)) cout<<"ERROR"<<endl;
 
 			for(int_t j=i+1; j<k; j++){
@@ -416,12 +417,28 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 			#endif
 			for(int_t j=i+1; j<k; j++){
 
+				#if OPT_VERSION
+					total++;
+
+					if(pos[j][rank[j]]>n){//jump if next_j(rank[j]+1) > qe
+						t[j][ell[j]]++;  //0^lj
+						s[j]++;
+						skip++;
+					}
+					else{
+				#endif
+
 				//int_t kj = wt.rank(n,j) - wt.rank(qs,j);
 				int_t kj = wt.rank(n,j) - rank[j];
-				if(kj>0){
-					t[j][kj]++; //1^kj
-					s[j]++;
-				}
+
+				#if OPT_VERSION == 0
+					if(kj>0){
+				#endif
+						t[j][kj]++; //1^kj
+						s[j]++;
+				#if OPT_VERSION == 0
+					}
+				#endif
 				t[j][ell[j]]++;  //0^lj
 				s[j]++;
 
@@ -429,6 +446,10 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 					cout << "***"<< j << ":\t1^"<< kj << endl;
 				#endif
 	
+				#if OPT_VERSION
+					}
+				#endif
+
 				#if OUTPUT
 					result[i][j] = compute_distance(t[j], s[j]);
 					#if DEBUG
@@ -441,7 +462,6 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		}
 
 		#if DEBUG
-			cout<<"skip = "<<skip<<" / "<<total<<" = "<<(double)skip/(double)total<<endl;
 			cout<<"\n####\t";
 
 			//output (tmp)
@@ -490,8 +510,10 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 	delete[] s;
 	delete[] rank;
 
-	for(int_t i=0; i<k; i++) delete[] pos[i];
-	delete[] pos;
+	#if OPT_VERSION
+		for(int_t i=0; i<k; i++) delete[] pos[i];
+		delete[] pos;
+	#endif
 
 
 	#if DEBUG
@@ -520,6 +542,9 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		printf("checksum = %lf\n",sum);
 	#endif
 
+	#if OPT_VERSION
+		cout<<"skip = "<<skip<<" / "<<total<<" = "<<(double)skip/(double)total<<endl;
+	#endif
 
 return 0;
 }
