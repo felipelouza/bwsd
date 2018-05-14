@@ -336,8 +336,9 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 	
 	for(int_t i=0; i<k; i++) pos[i][rank[i]]=n;
 
-	int skip=0;
-	int total=0;
+	#if OPT_VERSION
+		int_t skip=0, total=0;
+	#endif
 /**/
 
 	int_t *s= new int_t[k];
@@ -391,7 +392,7 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 					cout << "###"<< j << ":\t1^"<< kj << endl;
 				#endif
 
-				#if OPT_VERSION
+				#if OPT_VERSION == 0
 					if(kj>0){
 				#endif
 						t[j][kj]++; //1^kj
@@ -399,7 +400,7 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 						ell[j]=1;
 
 						s[j]+=2;
-				#if OPT_VERSION
+				#if OPT_VERSION == 0
 					}
 					else{
 						ell[j]++;
@@ -440,7 +441,7 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		}
 
 		#if DEBUG
-			cout<<"skipt = "<<skip<<" / "<<total<<" = "<<(double)skip/(double)total<<endl;
+			cout<<"skip = "<<skip<<" / "<<total<<" = "<<(double)skip/(double)total<<endl;
 			cout<<"\n####\t";
 
 			//output (tmp)
