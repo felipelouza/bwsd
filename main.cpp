@@ -9,6 +9,9 @@
 
 #include <sdsl/wavelet_trees.hpp>                                                                        
 #include <sdsl/int_vector.hpp>                                                                           
+#include <sdsl/bit_vectors.hpp>                                                                           
+#include <sdsl/rank_support.hpp>                                                                           
+
                                                                                                          
 #include <iostream>                                                                                      
                                                                                                          
@@ -40,6 +43,11 @@ using namespace std;
 
 #ifndef SAVE_SPACE 
   #define SAVE_SPACE 1
+#endif
+
+//1-wavelet-tree or k-Bitmaps
+#ifndef WT
+  #define WT 0
 #endif
 
 #ifndef OPT_VERSION
@@ -296,22 +304,50 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 
 	//COMPUTE WT(DA):
 	/**/
-	//wt_int<> wt;
-	wm_int<> wt;
-	if(!load_from_cache(wt, "wt", m_config)){
-		construct_im(wt, da);
-		store_to_cache(wt, "wt", m_config);
-	}
+	#if WT
+		wm_int<> wt;
+		if(!load_from_cache(wt, "wt", m_config)){
+			construct_im(wt, da);
+			store_to_cache(wt, "wt", m_config);
+		}
+	#else
+
+		bit_vector *B = new bit_vector[k];
+
+		for(int_t i=0; i<k; i++)
+			B[i] = bit_vector(n,0);
+
+		for(int_t i=1; i<n; i++)
+			B[da[i]][i]=1;
+
+		//rank
+		rank_support_v<1> *B_rank = new rank_support_v<1>[k];
+
+		for(int_t i=0; i<k; i++){
+			B_rank[i].set_vector(&B[i]);
+			util::init_support(B_rank[i], &B[i]);
+		}
+
+		//select
+		select_support_mcl<1,1> *B_select= new select_support_mcl<1,1>[k];
+		for(int_t i=0; i<k; i++)
+			B_select[i].set_vector(&B[i]);
+		
+	#endif
 
 	#if TIME
-		printf("#2. WT(DA):\n");
+		#if WT
+			printf("#2. WT(DA):\n");
+		#else
+			printf("#2. BITMAP(DA):\n");
+		#endif
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 	#endif
 
 	#if DEBUG	
 		cout<<"DA:"<<endl;
-		for(int_t i=0; i<n-1; i++) cout << wt[i] << ", ";
-		cout<<wt[n-1]<<"\t("<<n-1<<")"<<endl;
+		for(int_t i=0; i<n-1; i++) cout << da[i] << ", ";
+		cout<<da[n-1]<<"\t("<<n-1<<")"<<endl;
 	#endif
 
 
@@ -324,7 +360,13 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		
 		for(int_t i=0; i<k; i++){
 			rank[i]=0;
-			uint64_t len = wt.rank(wt.size(), i);   
+			#if WT
+				uint64_t len = wt.rank(wt.size(), i);   
+			#else
+				uint64_t len = B_rank[i](n);// wt.rank(wt.size(), i);   
+//				cout<<n<<" == "<< wt.size() <<endl;
+//				cout<<B_rank[i](n)<<" =? "<< wt.rank(n, i) <<endl;
+			#endif
 			pos[i] = new int[len+1];
 		}
 		
@@ -335,7 +377,7 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		
 		for(int_t i=0; i<k; i++) pos[i][rank[i]]=n+1;
 
-		int_t skip=0, total=0;
+		uint64_t skip=0, total=0;
 	#endif
 
 	int_t *s= new int_t[k];
@@ -344,7 +386,11 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 	for(int_t i=0; i<k-1; i++){
 
 		int_t qe=0;
-		uint64_t len_i = wt.rank(wt.size(), i);
+		#if WT
+			uint64_t len_i = wt.rank(wt.size(), i);
+		#else
+			uint64_t len_i = B_rank[i](n);
+		#endif
 
 		//init
 		#if SAVE_SPACE
@@ -367,10 +413,14 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 			#if OPT_VERSION
 				qe = pos[i][p-1];
 			#else
-				qe = wt.select(p, i);
+				#if WT
+					qe = wt.select(p, i);
+				#else
+					qe = B_select[i](p);
+				#endif
 			#endif
 
-			if(qe!=wt.select(p, i)) cout<<"ERROR"<<endl;
+			//if(qe!=wt.select(p, i)) cout<<"ERROR"<<endl;
 
 			for(int_t j=i+1; j<k; j++){
 
@@ -385,7 +435,13 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 				#endif
 	
 				//int_t kj = wt.rank(qe,j) - wt.rank(qs,j);//TODO: reduce 1 rank-query
-				int_t occ = wt.rank(qe,j);
+	
+				#if WT
+					int_t occ = wt.rank(qe,j);
+				#else
+					int_t occ = B_rank[j](qe);
+				#endif
+
 				int_t kj = occ - rank[j];
 				rank[j]=occ;
 
@@ -429,7 +485,11 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 				#endif
 
 				//int_t kj = wt.rank(n,j) - wt.rank(qs,j);
-				int_t kj = wt.rank(n,j) - rank[j];
+				#if WT
+					int_t kj = wt.rank(n,j) - rank[j];
+				#else
+					int_t kj = B_rank[j](n) - rank[j];
+				#endif
 
 				#if OPT_VERSION == 0
 					if(kj>0){
