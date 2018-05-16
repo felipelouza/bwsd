@@ -333,6 +333,7 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		for(int_t i=0; i<k; i++)
 			B_select[i].set_vector(&B[i]);
 		
+
 	#endif
 
 	#if TIME
@@ -575,6 +576,11 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		delete[] pos;
 	#endif
 
+	#if WT==0
+		delete[] B;
+		delete[] B_rank;
+		delete[] B_select;
+	#endif
 
 	#if DEBUG
 		#if OUTPUT
