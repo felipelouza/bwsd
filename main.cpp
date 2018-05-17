@@ -118,7 +118,7 @@ int main(int argc, char** argv){
 
 		case 3:	printf("## BWSD ##\n");
 			time_start(&t_start, &c_start);
-			//brute force algorithm
+			//straightforward algorithm
 			compute_all_bwsd(R, k, n, c_file);
 			printf("TOTAL:\n");
 			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
@@ -345,18 +345,21 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		}
 
 		//select-support
-		#if SD_VECTOR
-			select_support_sd<1> *B_select= new select_support_sd<1>[k];	
-		#else
-			select_support_mcl<1,1> *B_select= new select_support_mcl<1,1>[k];
-		#endif
-
-		for(int_t i=0; i<k; i++)
+		#if OPT_VERSION == 0
 			#if SD_VECTOR
-				B_select[i].set_vector(&B_sd[i]);	//TODO: fix when OPT_VERSION==0
+				select_support_sd<1> *B_select= new select_support_sd<1>[k];	
 			#else
-				B_select[i].set_vector(&B[i]);
-			#endif		
+				select_support_mcl<1,1> *B_select= new select_support_mcl<1,1>[k];
+			#endif
+			for(int_t i=0; i<k; i++){
+				#if SD_VECTOR
+					B_select[i].set_vector(&B_sd[i]);	
+				#else
+					B_select[i].set_vector(&B[i]); 
+					util::init_support(B_select[i], &B[i]);
+				#endif		
+			}
+		#endif
 
 	#endif //#if WT==0
 
@@ -596,7 +599,9 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 
 	#if WT==0
 		delete[] B_rank;
-		delete[] B_select;
+		#if OPT_VERSION == 0
+			delete[] B_select;
+		#endif
 		#if SD_VECTOR
 			delete[] B_sd;
 		#else
