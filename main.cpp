@@ -41,11 +41,6 @@ using namespace std;
   #define TIME 1
 #endif
 
-#ifndef SAVE_SPACE 
-  #define SAVE_SPACE 1
-#endif
-
-//1-wavelet-tree or k-Bitmaps
 #ifndef WT
   #define WT 0
 #endif
@@ -54,16 +49,17 @@ using namespace std;
   #define OPT_VERSION 1
 #endif
 
+#ifndef SD_VECTOR 
+  #define SD_VECTOR 0
+#endif
+
 typedef map<uint32_t, uint32_t> tMII;
 typedef map<uint32_t, double> tMID;
 
 typedef vector<tMID> tVMID;
 
-#if SAVE_SPACE
 typedef vector<tMII> tVMII;
-#else
-typedef uint_t** tVMII;
-#endif
+//typedef uint_t** tVMII;
 
 /******************************************************************************/
 
@@ -79,9 +75,9 @@ int main(int argc, char** argv){
 
 	time_t t_start=0;clock_t c_start=0;
 
-	int CHECK=0, MODE=0;
+	int MODE=0;
 
-	if(argc!=6){
+	if(argc!=5){
 		dies(__func__,NULL);
 	}
 
@@ -94,7 +90,6 @@ int main(int argc, char** argv){
 
 	sscanf(argv[3], "%d", &k);
 	sscanf(argv[4], "%u", &MODE);
-	sscanf(argv[5], "%u", &CHECK);
 
 	file_chdir(c_dir);
 
@@ -131,11 +126,6 @@ int main(int argc, char** argv){
 		
 		default: break;
 	}
-
-	// validate	
-	if(CHECK==1){
-	}
-
 
 return 0;
 }
@@ -240,10 +230,6 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 	printf("OUTPUT = %d\n", OUTPUT);
 	printf("sizeof(int) = %zu bytes\n", sizeof(int_t));
 
-	#if SAVE_SPACE
-		cout<<"SAVE_SPACE"<<endl;
-	#endif
-
 	#if OPT_VERSION 
 		cout<<"OPT_VERSION"<<endl;
 	#endif
@@ -320,19 +306,45 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		for(int_t i=1; i<n; i++)
 			B[da[i]][i]=1;
 
+		#if SD_VECTOR
+			//compress
+			sd_vector<> *B_sd = new sd_vector<>[k];
+			for(int_t i=0; i<k; i++)
+				B_sd[i] = sd_vector<>(B[i]);
+			delete[] B;
+		#endif
+
 		//rank
-		rank_support_v<1> *B_rank = new rank_support_v<1>[k];
+		
+		#if SD_VECTOR
+			rank_support_sd<1> *B_rank = new rank_support_sd<1>[k];
+		#else
+			rank_support_v<1> *B_rank = new rank_support_v<1>[k];
+		#endif
 
 		for(int_t i=0; i<k; i++){
-			B_rank[i].set_vector(&B[i]);
-			util::init_support(B_rank[i], &B[i]);
+			#if SD_VECTOR
+				B_rank[i].set_vector(&B_sd[i]);
+				util::init_support(B_rank[i], &B_sd[i]);
+			#else
+				B_rank[i].set_vector(&B[i]);
+				util::init_support(B_rank[i], &B[i]);
+			#endif
 		}
 
 		//select
-		select_support_mcl<1,1> *B_select= new select_support_mcl<1,1>[k];
+		#if SD_VECTOR
+			select_support_sd<1> *B_select= new select_support_sd<1>[k];	
+		#else
+			select_support_mcl<1,1> *B_select= new select_support_mcl<1,1>[k];
+		#endif
+
 		for(int_t i=0; i<k; i++)
-			B_select[i].set_vector(&B[i]);
-		
+			#if SD_VECTOR
+				B_select[i].set_vector(&B_sd[i]);				
+			#else
+				B_select[i].set_vector(&B[i]);
+			#endif		
 
 	#endif
 
@@ -340,7 +352,11 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		#if WT
 			printf("#2. WT(DA):\n");
 		#else
-			printf("#2. BITMAP(DA):\n");
+			#if SD_VECTOR
+				printf("#2. BITMAP_SD(DA):\n");
+			#else
+				printf("#2. BITMAP(DA):\n");
+			#endif
 		#endif
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 	#endif
@@ -394,9 +410,7 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		#endif
 
 		//init
-		#if SAVE_SPACE
-			tVMII t(k);
-		#endif
+		tVMII t(k);
 
 		#if DEBUG == 2
 			cout<<"i = "<<i<<", "<<len_i<<endl;
@@ -547,13 +561,11 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 				}
 				cout<<endl;
 
-				#if SAVE_SPACE
-					for(tMII::iterator it=t[j].begin(); it!=t[j].end(); ++it){
-						if(it->second){
-							cout << "t_" << it->first << ":\t" << it->second <<endl;
-						}
+				for(tMII::iterator it=t[j].begin(); it!=t[j].end(); ++it){
+					if(it->second){
+						cout << "t_" << it->first << ":\t" << it->second <<endl;
 					}
-				#endif
+				}
 
 				cout<<"####\t";
 			}		
@@ -577,9 +589,13 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 	#endif
 
 	#if WT==0
-		delete[] B;
 		delete[] B_rank;
 		delete[] B_select;
+		#if SD_VECTOR
+			delete[] B_sd;
+		#else
+			delete[] B;
+		#endif
 	#endif
 
 	#if DEBUG

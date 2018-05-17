@@ -22,15 +22,16 @@ LIBOBJ = \
 
 M64 = 0
 DEBUG = 0
-CHECK = 1
 TIME = 1
 OUTPUT = 0
+WT = 0
+SD_VECTOR = 1
 
 ##
 
 LFLAGS = -lm -ldl
 
-DEFINES = -DDEBUG=$(DEBUG) -DM64=$(M64) -DTIME=$(TIME) -DOUTPUT=$(OUTPUT)
+DEFINES = -DDEBUG=$(DEBUG) -DM64=$(M64) -DTIME=$(TIME) -DOUTPUT=$(OUTPUT) -DWT=$(WT) -DSD_VECTOR=$(SD_VECTOR)
 
 CXX_FLAGS=$(MY_CXX_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR) -L$(LIB_DIR) $(LFLAGS) $(DEFINES)
 
@@ -45,7 +46,6 @@ INPUT = reads-10000.fastq
 
 K	= 3
 MODE 	= 1
-CHECK	= 1
 OUTPUT	= 0
 
 ##
@@ -67,7 +67,7 @@ compile: lib main.cpp ${LIBOBJ}
 	$(MY_CXX) $(CXX_FLAGS) main.cpp $(CCLIB) -o all-bwsd ${LIBOBJ} 
 
 run:
-	./all-bwsd $(DIR) $(INPUT) $(K) $(MODE) $(CHECK)
+	./all-bwsd $(DIR) $(INPUT) $(K) $(MODE)
 
 valgrind:
-	valgrind --tool=memcheck --leak-check=full --track-origins=yes ./all-bwsd $(DIR) $(INPUT) $(K) $(MODE) $(CHECK)
+	valgrind --tool=memcheck --leak-check=full --track-origins=yes ./all-bwsd $(DIR) $(INPUT) $(K) $(MODE) 
