@@ -24,7 +24,7 @@ M64 = 0
 DEBUG = 0
 TIME = 1
 
-OUTPUT = 0
+OUTPUT = 1
 SD_VECTOR = 1
 WT = 0
 

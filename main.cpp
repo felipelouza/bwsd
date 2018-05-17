@@ -30,7 +30,7 @@ using namespace std;
 #include "external/gsacak.h"
 
 #ifndef OUTPUT 
-	#define OUTPUT 0 
+	#define OUTPUT 1 
 #endif
 
 #ifndef DEBUG
@@ -50,7 +50,7 @@ using namespace std;
 #endif
 
 #ifndef SD_VECTOR 
-  #define SD_VECTOR 0
+  #define SD_VECTOR 1
 #endif
 
 typedef map<uint32_t, uint32_t> tMII;
