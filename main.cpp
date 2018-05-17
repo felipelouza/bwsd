@@ -288,9 +288,8 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 	#endif
 
-	//COMPUTE WT(DA):
-	/**/
 	#if WT
+		//COMPUTE WT(DA):
 		wm_int<> wt;
 		if(!load_from_cache(wt, "wt", m_config)){
 			construct_im(wt, da);
@@ -298,24 +297,38 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		}
 	#else
 
-		bit_vector *B = new bit_vector[k];
+		#if SD_VECTOR
+			sd_vector_builder *B = new sd_vector_builder[k];
+		
+			int_t *size = new int_t[k];
+			for(int_t i=0; i<k; i++) size[i]=0;
+			for(int_t i=1; i<n; i++) size[da[i]]++;
 
-		for(int_t i=0; i<k; i++)
-			B[i] = bit_vector(n,0);
+			for(int_t i=0; i<k; i++)
+				B[i] = sd_vector_builder(n,size[i]);
+
+			delete[] size;
+		#else
+			bit_vector *B = new bit_vector[k];
+			for(int_t i=0; i<k; i++)
+				B[i] = bit_vector(n,0);
+		#endif
 
 		for(int_t i=1; i<n; i++)
-			B[da[i]][i]=1;
+			#if SD_VECTOR
+				B[da[i]].set(i);
+			#else
+				B[da[i]][i]=1;
+			#endif
 
 		#if SD_VECTOR
-			//compress
 			sd_vector<> *B_sd = new sd_vector<>[k];
 			for(int_t i=0; i<k; i++)
 				B_sd[i] = sd_vector<>(B[i]);
 			delete[] B;
 		#endif
 
-		//rank
-		
+		//rank-support
 		#if SD_VECTOR
 			rank_support_sd<1> *B_rank = new rank_support_sd<1>[k];
 		#else
@@ -324,15 +337,14 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 
 		for(int_t i=0; i<k; i++){
 			#if SD_VECTOR
-				B_rank[i].set_vector(&B_sd[i]);
-				util::init_support(B_rank[i], &B_sd[i]);
+				B_rank[i] = rank_support_sd<1>(&B_sd[i]);
 			#else
 				B_rank[i].set_vector(&B[i]);
 				util::init_support(B_rank[i], &B[i]);
 			#endif
 		}
 
-		//select
+		//select-support
 		#if SD_VECTOR
 			select_support_sd<1> *B_select= new select_support_sd<1>[k];	
 		#else
@@ -341,12 +353,12 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 
 		for(int_t i=0; i<k; i++)
 			#if SD_VECTOR
-				B_select[i].set_vector(&B_sd[i]);				
+				B_select[i].set_vector(&B_sd[i]);	//TODO: fix when OPT_VERSION==0
 			#else
 				B_select[i].set_vector(&B[i]);
 			#endif		
 
-	#endif
+	#endif //#if WT==0
 
 	#if TIME
 		#if WT
@@ -381,8 +393,6 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 				uint64_t len = wt.rank(wt.size(), i);   
 			#else
 				uint64_t len = B_rank[i](n);// wt.rank(wt.size(), i);   
-//				cout<<n<<" == "<< wt.size() <<endl;
-//				cout<<B_rank[i](n)<<" =? "<< wt.rank(n, i) <<endl;
 			#endif
 			pos[i] = new int[len+1];
 		}
@@ -435,22 +445,18 @@ int compute_all_bwsd_wt(unsigned char** R, uint_t k, uint_t n, char* c_file){
 				#endif
 			#endif
 
-			//if(qe!=wt.select(p, i)) cout<<"ERROR"<<endl;
-
 			for(int_t j=i+1; j<k; j++){
 
 				#if OPT_VERSION
 					total++;
-
-					if(pos[j][rank[j]]>qe){//jump if next_j(rank[j]+1) > qe
+					if(pos[j][rank[j]]>qe){//skip if next_j(rank[j]+1) > qe
 						ell[j]++;
 						skip++;
 						continue;
 					}
 				#endif
 	
-				//int_t kj = wt.rank(qe,j) - wt.rank(qs,j);//TODO: reduce 1 rank-query
-	
+				//int_t kj = wt.rank(qe,j) - wt.rank(qs,j);//reduce 1 rank-query
 				#if WT
 					int_t occ = wt.rank(qe,j);
 				#else
