@@ -47,7 +47,6 @@ INPUT = reads-10000.fastq
 
 K	= 3
 MODE 	= 1
-OUTPUT	= 0
 
 ##
 
