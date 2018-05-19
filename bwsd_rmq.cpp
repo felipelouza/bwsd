@@ -8,9 +8,12 @@ using namespace sdsl;
 
 typedef unordered_map<uint64_t,uint64_t> tUMII;
 
-double compute_distance(const tUMII& m, size_t runs) {
+double compute_distance(const tUMII& m, size_t runs, bool show=false) {
     double dist = 0;
     for(const auto& it : m) {
+        if (show ) {
+            cout << " ("<<it.second<<"/"<<runs<<")";
+        }
         double tmp = (double)it.second / (double) runs;
         dist += tmp*log2(tmp);
     }
@@ -78,7 +81,7 @@ int main(){
     for(size_t i=1; i < D.size() + maxD; ++i){
         size_t d  = i < D.size() ? D[i] : i-D.size();
         size_t lb = last_occ[d];
-        size_t rb = i-1;
+        size_t rb = i < D.size() ? i-1 : D.size()-1;
         last_occ[d] = i+1;
         cout << "i="<<setw(2)<<i<<" d="<<setw(2)<<d<<" ["<<lb<<","<<rb<<"] ";
         for(size_t j=lb; j<=rb; ++j){
@@ -103,12 +106,29 @@ int main(){
         cout << endl;
     }
 
+    cout << "       ";
+    for(size_t i=0; i<=maxD; ++i) {
+        cout << setw(6) << i << " ";
+    }
+    cout << endl;
     for(size_t i=0; i<=maxD; ++i){
+        cout << setw(6) << i << " "; 
+        size_t w = 6+7*(i+1);
         for(size_t j=i+1; j<=maxD; ++j) {
             double dist = compute_distance(counts[i][j], runs[i][j]);
-            cout << dist << " "; 
+            cout << setw(w) << setprecision(3) << dist << " "; 
+            w = 6;
         }
         cout << endl;
+    }
+    cout << endl;
+
+    for(size_t i=0; i<=maxD; ++i){
+        for(size_t j=i+1; j<=maxD; ++j) {
+            cout << i << " " << j <<":";
+            double dist = compute_distance(counts[i][j], runs[i][j], true);
+            cout << endl;
+        }
     }
    
 
