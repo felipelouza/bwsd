@@ -51,14 +51,6 @@ int main(){
     }
     print_array(P, "P+1");
     {
-        vector<uint64_t> next_occ(maxD+1, D.size());
-        for(size_t i=D.size(); i > 0; --i) {
-            N[i-1] = next_occ[D[i-1]];
-            next_occ[D[i-1]] = i;
-        }
-    }
-    print_array(N, "N  ");
-    {
         for(size_t i=0; i<D.size(); ++i){
             if ( P[i] > 0 ) {
                 R[i] = R[P[i]-1]+1;
@@ -66,9 +58,6 @@ int main(){
         }
     }
     print_array(R, "R  ");
-
-    rmq_succinct_sct<true>  rmq_P(&P);
-    rmq_succinct_sct<false> RMQ_N(&P);
 
     vector<size_t> seen(maxD+1,0); 
     stack<size_t>  seen_stack;
