@@ -6,7 +6,8 @@
 using namespace std;
 using namespace sdsl;
 
-typedef unordered_map<uint64_t,uint64_t> tUMII;
+typedef unordered_map<size_t,size_t> tUMII;
+typedef array<size_t,2> tAII; 
 
 double compute_distance(const tUMII& m, size_t runs, bool show=false) {
     double dist = 0;
@@ -20,6 +21,14 @@ double compute_distance(const tUMII& m, size_t runs, bool show=false) {
     dist *= -1.0;
     return dist;
 }
+
+void push_if_not_empty(stack<tAII>& s, tAII range){
+    if ( range[0] < range[1]+1 ) {
+        s.push(range);
+    }
+}
+
+
 
 int main(){
     vector<uint64_t> D = {0,1,2,3,2,2,1,2,2,3,4,2,1,2,3,4,2,1,2,1,0,5,4,3,2,3,2,1,3,2,3,4,5,3,2,3,3,1,1,1,2,0};
@@ -54,7 +63,7 @@ int main(){
         vector<uint64_t> next_occ(maxD+1, D.size());
         for(size_t i=D.size(); i > 0; --i) {
             N[i-1] = next_occ[D[i-1]];
-            next_occ[D[i-1]] = i;
+            next_occ[D[i-1]] = i-1;
         }
     }
     print_array(N, "N  ");
@@ -68,7 +77,7 @@ int main(){
     print_array(R, "R  ");
 
     rmq_succinct_sct<true>  rmq_P(&P);
-    rmq_succinct_sct<false> RMQ_N(&P);
+    rmq_succinct_sct<false> RMQ_N(&N);
 
     vector<size_t> seen(maxD+1,0); 
     stack<size_t>  seen_stack;
@@ -84,16 +93,36 @@ int main(){
         size_t rb = i < D.size() ? i-1 : D.size()-1;
         last_occ[d] = i+1;
         cout << "i="<<setw(2)<<i<<" d="<<setw(2)<<d<<" ["<<lb<<","<<rb<<"] ";
-        for(size_t j=lb; j<=rb; ++j){
-            if ( seen[D[j]] != i ) {
-                seen_stack.push(D[j]);
-                seen[D[j]] = i;
-                freq[D[j]] = 1;
-            } else {
-                ++freq[D[j]];
+
+        stack<tAII> ranges;
+        push_if_not_empty(ranges, {lb,rb});
+        while ( !ranges.empty() ) {
+            size_t _lb = ranges.top()[0];
+            size_t _rb = ranges.top()[1];
+            ranges.pop();
+            size_t _m = rmq_P(_lb, _rb);
+            if ( P[_m] < lb+1 ) { // equiv P[_m]-1 < lb 
+                seen_stack.push(D[_m]);
+                freq[D[_m]] = R[_m];
+                push_if_not_empty(ranges, {_lb, _m-1});
+                push_if_not_empty(ranges, {_m+1, _rb});
             }
         }
         cout << " unique docs: " << seen_stack.size() << " ";
+
+        push_if_not_empty(ranges, {lb,rb});
+        while ( !ranges.empty() ) {
+            size_t _lb = ranges.top()[0];
+            size_t _rb = ranges.top()[1];
+            ranges.pop();
+            size_t _m = RMQ_N(_lb, _rb);
+            if ( N[_m] > rb ) {
+                freq[D[_m]] = R[_m] - freq[D[_m]] + 1;
+                push_if_not_empty(ranges, {_m+1, _rb});
+                push_if_not_empty(ranges, {_lb, _m-1});
+            }
+        }
+
         while( !seen_stack.empty() ) {
             auto x = seen_stack.top();
             seen_stack.pop();
