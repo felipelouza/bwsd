@@ -3,7 +3,7 @@
  *
  * Authors: Felipe A. Louza, Simon Gog 
  * contact: louza@usp.br
- * 02/05/2018
+ * 22/05/2018
  *
  */
 
@@ -804,47 +804,47 @@ return 0;
 int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//Simon's algorithm 
 
 	int_t i;
-
+	
 	//Concatenate strings
 	/**/
 	unsigned char *str = cat_all(S, k, &n);
-
+	
 	printf("K = %" PRId32 "\n", k);
 	printf("N = %" PRIdN " bytes\n", n);
 	printf("OUTPUT = %d\n", OUTPUT);
 	printf("sizeof(int) = %zu bytes\n", sizeof(int_t));
-
+	
 	#if DEBUG
 		printf("R:\n");
 		for(i=0; i<k; i++)
 			printf("%" PRIdN ") %s (%zu)\n", i, S[i], strlen((char*)S[i]));
 	#endif
-
+	
 	//free memory
 	for(i=0; i<k; i++)
 		free(S[i]);
 	free(S);
-
+	
 	/**/
-
+	
 	string dir = "sdsl";
 	mkdir(dir.c_str());
 	string id = c_file;
 	id += "."+to_string(k);
-
+	
 	cache_config m_config(true, dir, id);
 	int_vector<> da(n);
-  //vector<uint64_t> da(n);
-
+	//vector<uint64_t> da(n);
+	
 	#if TIME
 	  time_t t_start=0;clock_t c_start=0;
 		time_start(&t_start, &c_start); 
 	#endif
-
+	
 	//COMPUTE DA:
 	/**/
 	if(!load_from_cache(da, "da", m_config)){
-
+	
 		int_t *SA = new int_t[n];
 		int_t *DA = new int_t[n];
 		
@@ -853,155 +853,155 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 	
 		for(i=0;i<n;i++) da[i]=DA[i];
 		store_to_cache(da, "da", m_config);
-
+	
 		delete[] SA;
 		delete[] DA;
 	}
 	
 	free(str);
-
+	
 	#if OUTPUT
 		tVMID	result(k);
 	#endif
-
+	
 	#if TIME
 		printf("#1. DA:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 	#endif
-  
-  auto max_da = *std::max_element(da.begin(), da.end());
-
-  #if DEBUG  
-    cout << max_da << endl;
-    auto print_array = [](int_vector<>& vec, string label) {
-      cout << label << ":";
-      for(const auto& x : vec) {
-        cout << " " << setw(2) << x;
-      }
-      cout << endl;
-    }; 
-    print_array(da, "da  ");
-  #endif  
-
-  int_vector<> P(da.size(), da.size());
-  int_vector<> N(da.size(), 0);
-  int_vector<> R(da.size(), 0);
-  
-  {
-      int_vector<> last_occ(max_da+1, 0);
-      for (size_t i=0; i < da.size(); ++i) {
-          P[i] = last_occ[da[i]];
-          last_occ[da[i]] = i+1;
-      }
-  }
-  #if DEBUG
-    print_array(P, "P+1");
-  #endif
-  {
-      vector<uint64_t> next_occ(max_da+1, da.size());
-      for(size_t i=da.size(); i > 0; --i) {
-          N[i-1] = next_occ[da[i-1]];
-          next_occ[da[i-1]] = i-1;
-      }
-  }
-  #if DEBUG
-    print_array(N, "N  ");
-  #endif
-  {
-      for(size_t i=0; i<da.size(); ++i){
-          if ( P[i] > 0 ) {
-              R[i] = R[P[i]-1]+1;
-          }
-      }
-  }
-  #if DEBUG
-    print_array(R, "R  ");
-  #endif
- 
-  rmq_succinct_sct<true>  rmq_P(&P);
-  rmq_succinct_sct<false> RMQ_N(&N);
-  
-  vector<size_t> seen(max_da+1,0); 
-  stack<size_t>  seen_stack;
-  vector<size_t> freq(max_da+1,0); 
-  vector<size_t> last_occ(max_da+1, 0);
-  
-  vector<vector<tMII>> counts(max_da+1, vector<tMII>(max_da+1));
-  vector<vector<int_t>> runs(max_da+1, vector<int_t>(max_da+1));  
-
+	
+	auto max_da = *std::max_element(da.begin(), da.end());
+	
+	#if DEBUG  
+		cout << max_da << endl;
+		auto print_array = [](int_vector<>& vec, string label) {
+			cout << label << ":";
+			for(const auto& x : vec) {
+				cout << " " << setw(2) << x;
+			}
+		  cout << endl;
+		}; 
+		print_array(da, "da  ");
+	#endif  
+	
+	int_vector<> P(da.size(), da.size());
+	int_vector<> N(da.size(), 0);
+	int_vector<> R(da.size(), 0);
+	
+	{
+		int_vector<> last_occ(max_da+1, 0);
+		for (size_t i=0; i < da.size(); ++i) {
+			P[i] = last_occ[da[i]];
+			last_occ[da[i]] = i+1;
+		}
+	}
+	#if DEBUG
+	  print_array(P, "P+1");
+	#endif
+	{
+		vector<uint64_t> next_occ(max_da+1, da.size());
+		for(size_t i=da.size(); i > 0; --i) {
+			N[i-1] = next_occ[da[i-1]];
+			next_occ[da[i-1]] = i-1;
+		}
+	}
+	#if DEBUG
+		print_array(N, "N  ");
+	#endif
+	{
+		for(size_t i=0; i<da.size(); ++i){
+			if ( P[i] > 0 ) {
+				R[i] = R[P[i]-1]+1;
+			}
+		}
+	}
+	#if DEBUG
+	  print_array(R, "R  ");
+	#endif
+	
+	rmq_succinct_sct<true>  rmq_P(&P);
+	rmq_succinct_sct<false> RMQ_N(&N);
+	
+	vector<size_t> seen(max_da+1,0); 
+	stack<size_t>  seen_stack;
+	vector<size_t> freq(max_da+1,0); 
+	vector<size_t> last_occ(max_da+1, 0);
+	
+	vector<vector<tMII>> counts(max_da+1, vector<tMII>(max_da+1));
+	vector<vector<int_t>> runs(max_da+1, vector<int_t>(max_da+1));  
+	
 	#if TIME
-    printf("#2. RMQ:\n");
+	  printf("#2. RMQ:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 	#endif
-
-  for(size_t i=1; i < da.size() + max_da; ++i){
-      size_t d  = i < da.size() ? da[i] : i-da.size();
-      size_t lb = last_occ[d];
-      size_t rb = i < da.size() ? i-1 : da.size()-1;
-      last_occ[d] = i+1;
-      
-      #if DEBUG
-        cout << "i="<<setw(2)<<i<<" d="<<setw(2)<<d<<" ["<<lb<<","<<rb<<"] ";
-      #endif
-      
-      stack<tAII> ranges;
-      push_if_not_empty(ranges, {lb,rb});
-      while ( !ranges.empty() ) {
-          size_t _lb = ranges.top()[0];
-          size_t _rb = ranges.top()[1];
-          ranges.pop();
-          size_t _m = rmq_P(_lb, _rb);
-          if ( P[_m] < lb+1 ) { // equiv P[_m]-1 < lb 
-              seen_stack.push(da[_m]);
-              freq[da[_m]] = R[_m];
-              push_if_not_empty(ranges, {_lb, _m-1});
-              push_if_not_empty(ranges, {_m+1, _rb});
-          }
-      }
-      #if DEBUG
-        cout << " unique docs: " << seen_stack.size() << " ";
-      #endif
-      
-      push_if_not_empty(ranges, {lb,rb});
-      while ( !ranges.empty() ) {
-          size_t _lb = ranges.top()[0];
-          size_t _rb = ranges.top()[1];
-          ranges.pop();
-          size_t _m = RMQ_N(_lb, _rb);
-          if ( N[_m] > rb ) {
-              freq[da[_m]] = R[_m] - freq[da[_m]] + 1;
-              push_if_not_empty(ranges, {_m+1, _rb});
-              push_if_not_empty(ranges, {_lb, _m-1});
-          }
-      }
-  
-      while( !seen_stack.empty() ) {
-          auto x = seen_stack.top();
-          seen_stack.pop();
-          #if DEBUG
-            cout << " (d="<<x<<", f="<<freq[x]<<")";
-          #endif
-          auto i1 = std::min(d,x);
-          auto i2 = std::max(d,x);
-          ++counts[i1][i2][freq[x]];
-          ++runs[i1][i2];
-      }
-      #if DEBUG
-        cout << endl;
-      #endif
-  }
-
-  for(size_t i=0; i<=max_da; ++i){
-    for(size_t j=i+1; j<=max_da; ++j) {
-      result[i][j] = compute_distance(counts[i][j], runs[i][j]);
-    }
-  }
-
+	
+	for(size_t i=1; i < da.size() + max_da; ++i){
+		size_t d  = i < da.size() ? da[i] : i-da.size();
+		size_t lb = last_occ[d];
+		size_t rb = i < da.size() ? i-1 : da.size()-1;
+		last_occ[d] = i+1;
+		
+		#if DEBUG
+		  cout << "i="<<setw(2)<<i<<" d="<<setw(2)<<d<<" ["<<lb<<","<<rb<<"] ";
+		#endif
+		
+		stack<tAII> ranges;
+		push_if_not_empty(ranges, {lb,rb});
+		while ( !ranges.empty() ) {
+			size_t _lb = ranges.top()[0];
+			size_t _rb = ranges.top()[1];
+			ranges.pop();
+			size_t _m = rmq_P(_lb, _rb);
+			if ( P[_m] < lb+1 ) { // equiv P[_m]-1 < lb 
+				seen_stack.push(da[_m]);
+				freq[da[_m]] = R[_m];
+				push_if_not_empty(ranges, {_lb, _m-1});
+				push_if_not_empty(ranges, {_m+1, _rb});
+			}
+		}
+		#if DEBUG
+		  cout << " unique docs: " << seen_stack.size() << " ";
+		#endif
+		
+		push_if_not_empty(ranges, {lb,rb});
+		while ( !ranges.empty() ) {
+			size_t _lb = ranges.top()[0];
+			size_t _rb = ranges.top()[1];
+			ranges.pop();
+			size_t _m = RMQ_N(_lb, _rb);
+			if ( N[_m] > rb ) {
+				freq[da[_m]] = R[_m] - freq[da[_m]] + 1;
+				push_if_not_empty(ranges, {_m+1, _rb});
+				push_if_not_empty(ranges, {_lb, _m-1});
+			}
+		}
+		
+		while( !seen_stack.empty() ) {
+			auto x = seen_stack.top();
+			seen_stack.pop();
+			#if DEBUG
+			  cout << " (d="<<x<<", f="<<freq[x]<<")";
+			#endif
+			auto i1 = std::min(d,x);
+			auto i2 = std::max(d,x);
+			++counts[i1][i2][freq[x]];
+			++runs[i1][i2];
+		}
+		#if DEBUG
+		  cout << endl;
+		#endif
+	}
+	
+	for(size_t i=0; i<=max_da; ++i){
+		for(size_t j=i+1; j<=max_da; ++j) {
+			result[i][j] = compute_distance(counts[i][j], runs[i][j]);
+		}
+	}
+	
 	#if TIME
 		printf("#3. BWSD-RMQ:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 	#endif
-
+	
 	#if DEBUG
 		#if OUTPUT
 			for(int_t i=0; i<k; i++){
@@ -1016,14 +1016,14 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 			}
 		#endif
 	#endif
-  
+	
 	//checksum: for the sake of sanity
 	#if OUTPUT
 		double sum=0.0;
 		for(int_t i=0; i<k; i++)
 			for(int_t j=i+1; j<k; j++)
 				sum+=result[i][j];
-
+	
 		printf("checksum = %lf\n",sum);
 	#endif
     
@@ -1034,47 +1034,47 @@ return 0;
 int compute_all_bwsd_rmq_nk(unsigned char** S, uint_t k, uint_t n, char* c_file){//Simon's algorithm 
 
 	int_t i;
-
+	
 	//Concatenate strings
 	/**/
 	unsigned char *str = cat_all(S, k, &n);
-
+	
 	printf("K = %" PRId32 "\n", k);
 	printf("N = %" PRIdN " bytes\n", n);
 	printf("OUTPUT = %d\n", OUTPUT);
 	printf("sizeof(int) = %zu bytes\n", sizeof(int_t));
-
+	
 	#if DEBUG
 		printf("R:\n");
 		for(i=0; i<k; i++)
 			printf("%" PRIdN ") %s (%zu)\n", i, S[i], strlen((char*)S[i]));
 	#endif
-
+	
 	//free memory
 	for(i=0; i<k; i++)
 		free(S[i]);
 	free(S);
-
+	
 	/**/
-
+	
 	string dir = "sdsl";
 	mkdir(dir.c_str());
 	string id = c_file;
 	id += "."+to_string(k);
-
+	
 	cache_config m_config(true, dir, id);
 	int_vector<> da(n);
-  //vector<uint64_t> da(n);
-
+	//vector<uint64_t> da(n);
+	
 	#if TIME
 	  time_t t_start=0;clock_t c_start=0;
 		time_start(&t_start, &c_start); 
 	#endif
-
+	
 	//COMPUTE DA:
 	/**/
 	if(!load_from_cache(da, "da", m_config)){
-
+	
 		int_t *SA = new int_t[n];
 		int_t *DA = new int_t[n];
 		
@@ -1083,122 +1083,122 @@ int compute_all_bwsd_rmq_nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 	
 		for(i=0;i<n;i++) da[i]=DA[i];
 		store_to_cache(da, "da", m_config);
-
+	
 		delete[] SA;
 		delete[] DA;
 	}
 	
 	free(str);
-
+	
 	#if OUTPUT
 		tVMID	result(k);
 	#endif
-
+	
 	#if TIME
 		printf("#1. DA:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 	#endif
-  
-  auto max_da = *std::max_element(da.begin(), da.end());
-
-  #if DEBUG  
-    cout << max_da << endl;
-    auto print_array = [](int_vector<>& vec, string label) {
-      cout << label << ":";
-      for(const auto& x : vec) {
-        cout << " " << setw(2) << x;
-      }
-      cout << endl;
-    }; 
-    print_array(da, "da  ");
-  #endif  
-
-  int_vector<> P(da.size(), da.size());
-  int_vector<> R(da.size(), 0);
-  
-  {
-      int_vector<> last_occ(max_da+1, 0);
-      for (size_t i=0; i < da.size(); ++i) {
-          P[i] = last_occ[da[i]];
-          last_occ[da[i]] = i+1;
-      }
-  }
-  #if DEBUG
-    print_array(P, "P+1");
-  #endif
-  {
-      for(size_t i=0; i<da.size(); ++i){
-          if ( P[i] > 0 ) {
-              R[i] = R[P[i]-1]+1;
-          }
-      }
-  }
-  #if DEBUG
-    print_array(R, "R  ");
-  #endif
- 
-  vector<size_t> seen(max_da+1,0); 
-  stack<size_t>  seen_stack;
-  vector<size_t> freq(max_da+1,0); 
-  vector<size_t> last_occ(max_da+1, 0);
-  
-  vector<vector<tMII>> counts(max_da+1, vector<tMII>(max_da+1));
-  vector<vector<int_t>> runs(max_da+1, vector<int_t>(max_da+1));  
-
+	
+	auto max_da = *std::max_element(da.begin(), da.end());
+	
+	#if DEBUG  
+		cout << max_da << endl;
+		auto print_array = [](int_vector<>& vec, string label) {
+			cout << label << ":";
+			for(const auto& x : vec) {
+				cout << " " << setw(2) << x;
+			}
+			cout << endl;
+		}; 
+		print_array(da, "da  ");
+	#endif  
+	
+	int_vector<> P(da.size(), da.size());
+	int_vector<> R(da.size(), 0);
+	
+	{
+		int_vector<> last_occ(max_da+1, 0);
+		for (size_t i=0; i < da.size(); ++i) {
+			P[i] = last_occ[da[i]];
+			last_occ[da[i]] = i+1;
+		}
+	}
+	#if DEBUG
+	  print_array(P, "P+1");
+	#endif
+	{
+		for(size_t i=0; i<da.size(); ++i){
+			if ( P[i] > 0 ) {
+				R[i] = R[P[i]-1]+1;
+			}
+		}
+	}
+	#if DEBUG
+		print_array(R, "R  ");
+	#endif
+	
+	vector<size_t> seen(max_da+1,0); 
+	stack<size_t>  seen_stack;
+	vector<size_t> freq(max_da+1,0); 
+	vector<size_t> last_occ(max_da+1, 0);
+	
+	vector<vector<tMII>> counts(max_da+1, vector<tMII>(max_da+1));
+	vector<vector<int_t>> runs(max_da+1, vector<int_t>(max_da+1));  
+	
 	#if TIME
-    printf("#2. RMQ:\n");
+		printf("#2. RMQ:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 	#endif
-
-  for(size_t i=1; i < da.size() + max_da; ++i){
-      size_t d  = i < da.size() ? da[i] : i-da.size();
-      size_t lb = last_occ[d];
-      size_t rb = i < da.size() ? i-1 : da.size()-1;
-      last_occ[d] = i+1;
-      #if DEBUG
-        cout << "i="<<setw(2)<<i<<" d="<<setw(2)<<d<<" ["<<lb<<","<<rb<<"] ";
-      #endif
-      
-      for(size_t j=lb; j<=rb; ++j){
-          if ( seen[da[j]] != i ) {
-              seen_stack.push(da[j]);
-              seen[da[j]] = i;
-              freq[da[j]] = 1;
-          } else {
-              ++freq[da[j]];
-          }
-      }
-      #if DEBUG
-        cout << " unique docs: " << seen_stack.size() << " ";
-      #endif
-      
-      while( !seen_stack.empty() ) {
-          auto x = seen_stack.top();
-          seen_stack.pop();
-          #if DEBUG
-            cout << " (d="<<x<<", f="<<freq[x]<<")";
-          #endif
-          auto i1 = std::min(d,x);
-          auto i2 = std::max(d,x);
-          ++counts[i1][i2][freq[x]];
-          ++runs[i1][i2];
-      }
-      #if DEBUG
-        cout << endl;
-      #endif
-  }
-
-  for(size_t i=0; i<=max_da; ++i){
-    for(size_t j=i+1; j<=max_da; ++j) {
-      result[i][j] = compute_distance(counts[i][j], runs[i][j]);
-    }
-  }
-
+	
+	for(size_t i=1; i < da.size() + max_da; ++i){
+		size_t d  = i < da.size() ? da[i] : i-da.size();
+		size_t lb = last_occ[d];
+		size_t rb = i < da.size() ? i-1 : da.size()-1;
+		last_occ[d] = i+1;
+		#if DEBUG
+			cout << "i="<<setw(2)<<i<<" d="<<setw(2)<<d<<" ["<<lb<<","<<rb<<"] ";
+		#endif
+		
+		for(size_t j=lb; j<=rb; ++j){
+			if ( seen[da[j]] != i ) {
+				seen_stack.push(da[j]);
+				seen[da[j]] = i;
+				freq[da[j]] = 1;
+			} else {
+				++freq[da[j]];
+			}
+		}
+		#if DEBUG
+		  cout << " unique docs: " << seen_stack.size() << " ";
+		#endif
+		
+		while( !seen_stack.empty() ) {
+			auto x = seen_stack.top();
+			seen_stack.pop();
+			#if DEBUG
+				cout << " (d="<<x<<", f="<<freq[x]<<")";
+			#endif
+			auto i1 = std::min(d,x);
+			auto i2 = std::max(d,x);
+			++counts[i1][i2][freq[x]];
+			++runs[i1][i2];
+		}
+		#if DEBUG
+		  cout << endl;
+		#endif
+	}
+	
+	for(size_t i=0; i<=max_da; ++i){
+		for(size_t j=i+1; j<=max_da; ++j) {
+			result[i][j] = compute_distance(counts[i][j], runs[i][j]);
+		}
+	}
+	
 	#if TIME
 		printf("#3. BWSD-RMQ:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 	#endif
-
+	
 	#if DEBUG
 		#if OUTPUT
 			for(int_t i=0; i<k; i++){
@@ -1213,14 +1213,14 @@ int compute_all_bwsd_rmq_nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 			}
 		#endif
 	#endif
-  
+	
 	//checksum: for the sake of sanity
 	#if OUTPUT
 		double sum=0.0;
 		for(int_t i=0; i<k; i++)
 			for(int_t j=i+1; j<k; j++)
 				sum+=result[i][j];
-
+	
 		printf("checksum = %lf\n",sum);
 	#endif
     
