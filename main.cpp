@@ -70,7 +70,7 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file);/
 
 int compute_all_bwsd_rmq(unsigned char **R, uint_t k, uint_t n, char* c_file);//Simon's algorithm 
 
-int compute_all_bwsd_rmq_nk(unsigned char **R, uint_t k, uint_t n, char* c_file);//Simon's algorithm 
+int compute_all_bwsd_nk(unsigned char **R, uint_t k, uint_t n, char* c_file);//Simon's algorithm 
 
 int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file);//brute force
 
@@ -116,7 +116,7 @@ int main(int argc, char** argv){
 
 		case 2:	printf("## BWSD_RMQ ##\n"); //Simon's algorithm 
 			time_start(&t_start, &c_start);
-      compute_all_bwsd_rmq_nk(R, k, n, c_file);
+      compute_all_bwsd_rmq(R, k, n, c_file);
 			printf("TOTAL:\n");
 			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
@@ -1018,7 +1018,7 @@ return 0;
 }
 /******************************************************************************/
 
-int compute_all_bwsd_rmq_nk(unsigned char** S, uint_t k, uint_t n, char* c_file){//Simon's algorithm 
+int compute_all_bwsd_nk(unsigned char** S, uint_t k, uint_t n, char* c_file){//Simon's algorithm 
 
 	int_t i;
 	
