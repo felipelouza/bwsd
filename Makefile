@@ -15,8 +15,8 @@ MY_CXX=g++
 LIBOBJ = \
 	lib/file.o\
 	lib/utils.o\
-	external/malloc_count/malloc_count.o\
-	external/gsacak.o
+	external/gsacak.o\
+	external/malloc_count/malloc_count.o
 	
 ##
 
@@ -65,6 +65,12 @@ lib: lib/file.c lib/utils.c external/gsacak.c external/malloc_count/malloc_count
 
 compile: lib main.cpp ${LIBOBJ} 
 	$(MY_CXX) $(CXX_FLAGS) main.cpp $(CCLIB) -o all-bwsd ${LIBOBJ} 
+
+compile-rmq: bwsd_rmq.cpp 
+	$(MY_CXX) $(CXX_FLAGS) bwsd_rmq.cpp $(CCLIB)  -o bwsd-rmq
+
+compile-rmq-nk: bwsd_rmq_nk.cpp 
+	$(MY_CXX) $(CXX_FLAGS) bwsd_rmq_nk.cpp $(CCLIB)  -o bwsd-rmq-nk
 
 run:
 	./all-bwsd $(DIR) $(INPUT) $(K) $(MODE)

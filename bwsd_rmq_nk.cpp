@@ -22,11 +22,11 @@ double compute_distance(const tUMII& m, size_t runs, bool show=false) {
 }
 
 int main(){
-    vector<uint64_t> D = {0,1,2,3,2,2,1,2,2,3,4,2,1,2,3,4,2,1,2,1,0,5,4,3,2,3,2,1,3,2,3,4,5,3,2,3,3,1,1,1,2,0};
+    vector<uint64_t> da = {0,1,2,3,2,2,1,2,2,3,4,2,1,2,3,4,2,1,2,1,0,5,4,3,2,3,2,1,3,2,3,4,5,3,2,3,3,1,1,1,2,0};
     // assume that D contains all values in 0..maxD-1
-    auto maxD = *std::max_element(D.begin(), D.end());
+    auto max_da = *std::max_element(da.begin(), da.end());
 
-    cout << maxD << endl;
+    cout << max_da << endl;
 
     auto print_array = [](vector<uint64_t>& vec, string label) {
         cout << label << ":";
@@ -36,22 +36,22 @@ int main(){
         cout << endl;
     }; 
 
-    print_array(D, "D  ");
+    print_array(da, "DA  ");
 
 
-    vector<uint64_t> P(D.size(), D.size());
-    vector<uint64_t> N(D.size(), 0);
-    vector<uint64_t> R(D.size(), 0);
+    vector<uint64_t> P(da.size(), da.size());
+    vector<uint64_t> N(da.size(), 0);
+    vector<uint64_t> R(da.size(), 0);
     {
-        vector<uint64_t> last_occ(maxD+1, 0);
-        for (size_t i=0; i < D.size(); ++i) {
-            P[i] = last_occ[D[i]];
-            last_occ[D[i]] = i+1;
+        vector<uint64_t> last_occ(max_da+1, 0);
+        for (size_t i=0; i < da.size(); ++i) {
+            P[i] = last_occ[da[i]];
+            last_occ[da[i]] = i+1;
         }
     }
     print_array(P, "P+1");
     {
-        for(size_t i=0; i<D.size(); ++i){
+        for(size_t i=0; i<da.size(); ++i){
             if ( P[i] > 0 ) {
                 R[i] = R[P[i]-1]+1;
             }
@@ -59,27 +59,27 @@ int main(){
     }
     print_array(R, "R  ");
 
-    vector<size_t> seen(maxD+1,0); 
+    vector<size_t> seen(max_da+1,0); 
     stack<size_t>  seen_stack;
-    vector<size_t> freq(maxD+1,0); 
-    vector<size_t> last_occ(maxD+1, 0);
+    vector<size_t> freq(max_da+1,0); 
+    vector<size_t> last_occ(max_da+1, 0);
 
-    vector<vector<tUMII>> counts(maxD+1, vector<tUMII>(maxD+1));
-    vector<vector<uint64_t>> runs(maxD+1, vector<uint64_t>(maxD+1));
+    vector<vector<tUMII>> counts(max_da+1, vector<tUMII>(max_da+1));
+    vector<vector<uint64_t>> runs(max_da+1, vector<uint64_t>(max_da+1));
 
-    for(size_t i=1; i < D.size() + maxD; ++i){
-        size_t d  = i < D.size() ? D[i] : i-D.size();
+    for(size_t i=1; i < da.size() + max_da; ++i){
+        size_t d  = i < da.size() ? da[i] : i-da.size();
         size_t lb = last_occ[d];
-        size_t rb = i < D.size() ? i-1 : D.size()-1;
+        size_t rb = i < da.size() ? i-1 : da.size()-1;
         last_occ[d] = i+1;
         cout << "i="<<setw(2)<<i<<" d="<<setw(2)<<d<<" ["<<lb<<","<<rb<<"] ";
         for(size_t j=lb; j<=rb; ++j){
-            if ( seen[D[j]] != i ) {
-                seen_stack.push(D[j]);
-                seen[D[j]] = i;
-                freq[D[j]] = 1;
+            if ( seen[da[j]] != i ) {
+                seen_stack.push(da[j]);
+                seen[da[j]] = i;
+                freq[da[j]] = 1;
             } else {
-                ++freq[D[j]];
+                ++freq[da[j]];
             }
         }
         cout << " unique docs: " << seen_stack.size() << " ";
@@ -96,14 +96,14 @@ int main(){
     }
 
     cout << "       ";
-    for(size_t i=0; i<=maxD; ++i) {
+    for(size_t i=0; i<=max_da; ++i) {
         cout << setw(6) << i << " ";
     }
     cout << endl;
-    for(size_t i=0; i<=maxD; ++i){
+    for(size_t i=0; i<=max_da; ++i){
         cout << setw(6) << i << " "; 
         size_t w = 6+7*(i+1);
-        for(size_t j=i+1; j<=maxD; ++j) {
+        for(size_t j=i+1; j<=max_da; ++j) {
             double dist = compute_distance(counts[i][j], runs[i][j]);
             cout << setw(w) << setprecision(3) << dist << " "; 
             w = 6;
@@ -112,8 +112,8 @@ int main(){
     }
     cout << endl;
 
-    for(size_t i=0; i<=maxD; ++i){
-        for(size_t j=i+1; j<=maxD; ++j) {
+    for(size_t i=0; i<=max_da; ++i){
+        for(size_t j=i+1; j<=max_da; ++j) {
             cout << i << " " << j <<":";
             double dist = compute_distance(counts[i][j], runs[i][j], true);
             cout << endl;

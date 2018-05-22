@@ -49,9 +49,9 @@ typedef uint32_t int_text;
 /**********************************************************************/
 
 //#define swap(a,b) do { typeof(a) aux_a_b = (a); (a) = (b); (b) = aux_a_b; } while (0)
-//
-#define min(a,b) ((a) < (b) ? (a) : (b))
-#define max(a,b) ((a) > (b) ? (a) : (b))
+
+//#define min(a,b) ((a) < (b) ? (a) : (b))
+//#define max(a,b) ((a) > (b) ? (a) : (b))
 
 void   time_start(time_t *t_time, clock_t *c_clock);
 double time_stop(time_t t_time, clock_t c_clock);
