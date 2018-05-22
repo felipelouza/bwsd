@@ -222,19 +222,6 @@ return dist;
 }
 /******************************************************************************/
 
-double compute_distance_gog(const tUMII& m, size_t runs, bool show=false) {
-    double dist = 0;
-    for(const auto& it : m) {
-        if (show ) {
-            cout << " ("<<it.second<<"/"<<runs<<")";
-        }
-        double tmp = (double)it.second / (double) runs;
-        dist += tmp*log2(tmp);
-    }
-    dist *= -1.0;
-    return dist;
-}
-
 void push_if_not_empty(stack<tAII>& s, tAII range){
     if ( range[0] < range[1]+1 ) {
         s.push(range);
