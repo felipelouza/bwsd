@@ -54,6 +54,10 @@ using namespace std;
   #define SD_VECTOR 1
 #endif
 
+
+//#define Result(i,j) (result[i][j])
+#define Result(i,j) (Md[(k*(k-1)/2) - (k-i)*((k-i)-1)/2 + j - i - 1])
+
 typedef map<uint32_t, uint32_t> tMII;
 typedef map<uint32_t, double> tMID;
 
@@ -178,8 +182,11 @@ unsigned char* cat_all(unsigned char** R, int k, uint_t *n){
 	int_t i, j, l=0;
 	unsigned char *str = (unsigned char*) malloc((*n)*sizeof(unsigned char));
 
+	int_t max=0;
+
 	for(i=0; i<k; i++){
 		int_t m = strlen((char*)R[i]);
+		if(m>max) max=m;
 		for(j=0; j<m; j++){
 			if(R[i][j]<255) str[l++] = R[i][j]+1;
 //			str[l++] = R[i][j];
@@ -192,6 +199,8 @@ unsigned char* cat_all(unsigned char** R, int k, uint_t *n){
 	  str = (unsigned char*) realloc(str, (l)*sizeof(unsigned char)); 
 	}
 	*n = l;
+
+	cout<<"max = "<<max<<endl;
 
 return str;
 }
@@ -294,9 +303,11 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file){
 	free(str);
 
 	#if OUTPUT
-		tVMID	result(k);
+		//tVMID	result(k);
+		size_t m = (k*k-k)/2.0;
+		double *Md = new double[m];
 	#endif
-
+ 
 	#if TIME
 		printf("#1. DA:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
@@ -549,10 +560,10 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file){
 				#endif
 
 				#if OUTPUT
-					result[i][j] = compute_distance(t[j], s[j]);
+					Result(i,j) = compute_distance(t[j], s[j]);
 					#if DEBUG
 						cout<<"["<<i<<", "<<j<<"]\t\ts="<<s[j]<<"\n";
-						cout<<"D = "<<result[i][j]<<endl;
+						cout<<"D = "<<Result(i,j)<<endl;
 					#endif
 				#endif
 
@@ -627,11 +638,11 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		#if OUTPUT
 			for(int_t i=0; i<k; i++){
 				for(int_t j=0; j<i; j++){
-					printf("%.2lf\t", result[j][i]);
+					printf("%.2lf\t", Result(j,i));
 				}
 				printf("0.00\t");
 				for(int_t j=i+1; j<k; j++){
-					printf("%.2lf\t", result[i][j]);
+					printf("%.2lf\t", Result(i,j));
 				}
 				cout<<endl;
 			}
@@ -644,7 +655,7 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		double sum=0.0;
 		for(int_t i=0; i<k; i++)
 			for(int_t j=i+1; j<k; j++)
-				sum+=result[i][j];
+				sum+=Result(i,j);
 
 		printf("checksum = %lf\n",sum);
 	#endif
@@ -671,7 +682,9 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 			printf("%" PRIdN ") %s (%zu)\n", i, R[i], strlen((char*)R[i]));
 	#endif
 
-	tVMID	result(k);
+	//tVMID	result(k);
+	size_t m = (k*k-k)/2.0;
+	double *Md = new double[m];
 
 	/**/
 	for(int_t i=0; i<k-1; i++){
@@ -735,7 +748,7 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 			#endif
 
 			#if OUTPUT
-				result[i][j] = compute_distance(t[j], s);
+				Result(i,j) = compute_distance(t[j], s);
 			#endif
 
 			#if DEBUG
@@ -762,11 +775,11 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 		#if OUTPUT
 			for(int_t i=0; i<k; i++){
 				for(int_t j=0; j<i; j++){
-					printf("%.2lf\t", result[j][i]);
+					printf("%.2lf\t", Result(j,i));
 				}
 				printf("0.00\t");
 				for(int_t j=i+1; j<k; j++){
-					printf("%.2lf\t", result[i][j]);
+					printf("%.2lf\t", Result(i,j));
 				}
 				cout<<endl;
 			}
@@ -778,7 +791,7 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 		double sum=0.0;
 		for(int_t i=0; i<k; i++)
 			for(int_t j=i+1; j<k; j++)
-				sum+=result[i][j];
+				sum+=Result(i,j);
 
 		printf("checksum = %lf\n",sum);
 	#endif
@@ -848,7 +861,9 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 	free(str);
 	
 	#if OUTPUT
-		tVMID	result(k);
+		//tVMID	result(k);
+		size_t m = (k*k-k)/2.0;
+		double *Md = new double[m];
 	#endif
 	
 	#if TIME
@@ -980,7 +995,7 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 	
 	for(size_t i=0; i<=max_da; ++i){
 		for(size_t j=i+1; j<=max_da; ++j) {
-			result[i][j] = compute_distance(counts[i][j], runs[i][j]);
+			Result(i,j) = compute_distance(counts[i][j], runs[i][j]);
 		}
 	}
 	
@@ -993,11 +1008,11 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 		#if OUTPUT
 			for(int_t i=0; i<k; i++){
 				for(int_t j=0; j<i; j++){
-					printf("%.2lf\t", result[j][i]);
+					printf("%.2lf\t", Result(j,i));
 				}
 				printf("0.00\t");
 				for(int_t j=i+1; j<k; j++){
-					printf("%.2lf\t", result[i][j]);
+					printf("%.2lf\t", Result(i,j));
 				}
 				cout<<endl;
 			}
@@ -1009,7 +1024,7 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 		double sum=0.0;
 		for(int_t i=0; i<k; i++)
 			for(int_t j=i+1; j<k; j++)
-				sum+=result[i][j];
+				sum+=Result(i,j);
 	
 		printf("checksum = %lf\n",sum);
 	#endif
@@ -1078,7 +1093,9 @@ int compute_all_bwsd_nk(unsigned char** S, uint_t k, uint_t n, char* c_file){//S
 	free(str);
 	
 	#if OUTPUT
-		tVMID	result(k);
+		//tVMID	result(k);
+		size_t m = (k*k-k)/2.0;
+		double *Md = new double[m];
 	#endif
 	
 	#if TIME
@@ -1177,7 +1194,7 @@ int compute_all_bwsd_nk(unsigned char** S, uint_t k, uint_t n, char* c_file){//S
 	
 	for(size_t i=0; i<=max_da; ++i){
 		for(size_t j=i+1; j<=max_da; ++j) {
-			result[i][j] = compute_distance(counts[i][j], runs[i][j]);
+			Result(i,j) = compute_distance(counts[i][j], runs[i][j]);
 		}
 	}
 	
@@ -1190,11 +1207,11 @@ int compute_all_bwsd_nk(unsigned char** S, uint_t k, uint_t n, char* c_file){//S
 		#if OUTPUT
 			for(int_t i=0; i<k; i++){
 				for(int_t j=0; j<i; j++){
-					printf("%.2lf\t", result[j][i]);
+					printf("%.2lf\t", Result(j,i));
 				}
 				printf("0.00\t");
 				for(int_t j=i+1; j<k; j++){
-					printf("%.2lf\t", result[i][j]);
+					printf("%.2lf\t", Result(i,j));
 				}
 				cout<<endl;
 			}
@@ -1206,7 +1223,7 @@ int compute_all_bwsd_nk(unsigned char** S, uint_t k, uint_t n, char* c_file){//S
 		double sum=0.0;
 		for(int_t i=0; i<k; i++)
 			for(int_t j=i+1; j<k; j++)
-				sum+=result[i][j];
+				sum+=Result(i,j);
 	
 		printf("checksum = %lf\n",sum);
 	#endif
