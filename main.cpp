@@ -696,12 +696,13 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 		#if DEBUG 
 			cout<<endl;
 		#endif
-		tVMII t(k);
 
 
 		//foreach S^j in j+1..k
 		for(int_t j=i+1; j<k; j++){
 	
+			tMII t;
+
 			int_t s= 0;
 			//concatenates
 			unsigned char *str = cat(R[i], R[j], &n);
@@ -731,7 +732,7 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 							cout<<i<<"^"<<count<<" "; 
 						#endif
 
-						t[j][count]++; //0^count
+						t[count]++; //0^count
 						s++;
 					}
 					if(p==n) break;
@@ -743,7 +744,7 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 							cout<<j<<"^"<<count<<" "; 
 						#endif
 
-						t[j][count]++; //1^count
+						t[count]++; //1^count
 						s++;
 					}
 			}
@@ -752,7 +753,7 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 			#endif
 
 			#if OUTPUT
-				Result(i,j) = compute_distance(t[j], s);
+				Result(i,j) = compute_distance(t, s);
 			#endif
 
 			#if DEBUG
