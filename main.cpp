@@ -660,6 +660,10 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		printf("checksum = %lf\n",sum);
 	#endif
 
+	#if OUTPUT
+		delete[] Md;
+	#endif
+
 	#if OPT_VERSION
 		cout<<"skip = "<<skip<<" / "<<total<<" = "<<(double)skip/(double)total<<endl;
 	#endif
@@ -794,6 +798,10 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 				sum+=Result(i,j);
 
 		printf("checksum = %lf\n",sum);
+	#endif
+
+	#if OUTPUT
+		delete[] Md;
 	#endif
 
 return 0;
@@ -1029,6 +1037,10 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 		printf("checksum = %lf\n",sum);
 	#endif
     
+	#if OUTPUT
+		delete[] Md;
+	#endif
+
 return 0;
 }
 /******************************************************************************/
@@ -1228,6 +1240,10 @@ int compute_all_bwsd_nk(unsigned char** S, uint_t k, uint_t n, char* c_file){//S
 		printf("checksum = %lf\n",sum);
 	#endif
     
+	#if OUTPUT
+		delete[] Md;
+	#endif
+
 return 0;
 }
 /******************************************************************************/
