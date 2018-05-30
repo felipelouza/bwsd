@@ -56,7 +56,7 @@ using namespace std;
 
 //debug purposes
 #ifndef WORST_CASE 
-  #define WORST_CASE 1
+  #define WORST_CASE 0
 #endif
 
 
