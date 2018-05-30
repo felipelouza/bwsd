@@ -54,6 +54,11 @@ using namespace std;
   #define SD_VECTOR 1
 #endif
 
+//debug purposes
+#ifndef WORST_CASE 
+  #define WORST_CASE 1
+#endif
+
 
 //#define Result(i,j) (result[i][j])
 #define Result(i,j) (Md[(k*(k-1)/2) - (k-i)*((k-i)-1)/2 + j - i - 1])
@@ -301,6 +306,19 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file){
 	}
 	
 	free(str);
+
+	#if WORST_CASE
+		int_t j1, j2=0;
+		for(int_t i=0; i<k; i++){
+			j1 = i*(n/k)+1;
+			j2 = (i+1)*(n/k)+1;
+			for(int_t j=j1; j<j2 && j<n; j++)
+				da[j]=i;
+		}
+		for(int_t j=j2; j<n; j++)
+				da[j]=k;
+		//cout<<"DA: "; for(int_t i=0; i<n; i++) cout<<da[i]<<" ";cout<<endl;
+	#endif
 
 	#if OUTPUT
 		//tVMID	result(k);
@@ -595,11 +613,13 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file){
 				}
 				cout<<endl;
 
+				/*
 				for(tMII::iterator it=t[j].begin(); it!=t[j].end(); ++it){
 					if(it->second){
 						cout << "t_" << it->first << ":\t" << it->second <<endl;
 					}
 				}
+				*/
 
 				cout<<"####\t";
 			}		
@@ -715,6 +735,14 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 			for(int_t p=0; p<n; p++) SA[p]=DA[p]=0;
 			gsacak(str, (uint_t*)SA, NULL, DA, (uint_t)n); //construct SA+DA
 
+			#if WORST_CASE
+				int_t j1=1;
+				int_t j2=n/2+1;
+				for(int_t i=j1; i<j2; i++) DA[i]=0;
+				for(int_t i=j2; i<n;	i++) DA[i]=1;
+				//cout<<"DA: "; for(int_t i=0; i<n; i++) cout<<DA[i]<<" ";cout<<endl;
+			#endif
+
 			#if DEBUG 
 				cout<<"####\t";
 				cout<<"("<<i<<", "<<j<<")\n";
@@ -756,11 +784,11 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 				Result(i,j) = compute_distance(t, s);
 			#endif
 
-			#if DEBUG
-			for(tMII::iterator it=t[j].begin(); it!=t[j].end(); ++it)
-				if(it->second)
-					cout << "#^" << it->first << ":\t" << it->second <<endl;
-			#endif
+			//#if DEBUG
+			//for(tMII::iterator it=t[j].begin(); it!=t[j].end(); ++it)
+			//	if(it->second)
+			//		cout << "#^" << it->first << ":\t" << it->second <<endl;
+			//#endif
 
 			delete[] DA;
 			delete[] SA;
@@ -868,7 +896,20 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 	}
 	
 	free(str);
-	
+
+	#if WORST_CASE
+		int_t j1, j2=0;
+		for(int_t i=0; i<k; i++){
+			j1 = i*(n/k)+1;
+			j2 = (i+1)*(n/k)+1;
+			for(int_t j=j1; j<j2 && j<n; j++)
+				da[j]=i;
+		}
+		for(int_t j=j2; j<n; j++)
+				da[j]=k;
+		//cout<<"DA: "; for(int_t i=0; i<n; i++) cout<<da[i]<<" ";cout<<endl;
+	#endif
+
 	#if OUTPUT
 		//tVMID	result(k);
 		size_t m = (k*k-k)/2.0;
