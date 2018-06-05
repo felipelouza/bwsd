@@ -1,13 +1,33 @@
 # all-bwsd 
 
+This code is an implementation of three algorithms to compute all-pairs of Burrows-Wheeler similarity distributions (BWSD) for a string collection.
 
 # run
 
 To run a test with K=5 strings from DIR=dataset INPUT=input.100.txt type:
 
 ```sh
-make
-make run DIR=dataset/ INPUT=input.100.txt K=5 
+make compile
+```
+
+Note: all algorithms need [sdsl-lite](https://github.com/simongog/sdsl-lite).
+
+### Alg. 1
+
+```sh
+make run DIR=dataset/ INPUT=input.100.txt K=5 MODE=1
+```
+
+### Alg. 2
+
+```sh
+make run DIR=dataset/ INPUT=input.100.txt K=5 MODE=2
+```
+
+### Straightforward
+
+```sh
+make run DIR=dataset/ INPUT=input.100.txt K=5 MODE=3
 ```
 
 ## options
@@ -24,15 +44,31 @@ Computing distance D\_E:
 make OUTPUT=2
 ```
 
+To see the output matrix:
+
+```sh
+make DEBUG=1
+make run DIR=dataset/ INPUT=input.100.txt K=5 MODE=3
+```
+
+
+## alternatives (Alg. 1)
+
 Using sparse bitvectors (sd\_vector):
 
 ```sh
 make SD_VECTOR=1
+make run DIR=dataset/ INPUT=input.100.txt K=5 MODE=1
 ```
 
-Wavelet tree:
+Using wavelet tree:
 
 ```sh
 make WT=1
+make run DIR=dataset/ INPUT=input.100.txt K=5 MODE=1
 ```
 
+## References
+
+\[1\] 
+Louza, F. A., & Telles, G. P. & Gog, S. & Zhao, L.: Computing Burrows-Wheeler Similarity Distributions for String Collections, 2018, submitted. 
