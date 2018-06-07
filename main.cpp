@@ -870,7 +870,7 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 	id += "."+to_string(k);
 	
 	cache_config m_config(true, dir, id);
-	int_vector<> da(n);
+	int_vector<64> da(n);
 	//vector<uint64_t> da(n);
 	
 	#if TIME
@@ -925,7 +925,7 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 	
 	#if DEBUG  
 		cout << max_da << endl;
-		auto print_array = [](int_vector<>& vec, string label) {
+		auto print_array = [](int_vector<64>& vec, string label) {
 			cout << label << ":";
 			for(const auto& x : vec) {
 				cout << " " << setw(2) << x;
@@ -935,12 +935,12 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 		print_array(da, "da  ");
 	#endif  
 	
-	int_vector<> P(da.size(), da.size());
-	int_vector<> N(da.size(), 0);
-	int_vector<> R(da.size(), 0);
+	int_vector<64> P(da.size(), da.size());
+	int_vector<64> N(da.size(), 0);
+	int_vector<64> R(da.size(), 0);
 	
 	{
-		int_vector<> last_occ(max_da+1, 0);
+		int_vector<64> last_occ(max_da+1, 0);
 		for (size_t i=0; i < da.size(); ++i) {
 			P[i] = last_occ[da[i]];
 			last_occ[da[i]] = i+1;
