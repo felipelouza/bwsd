@@ -992,7 +992,6 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 //	vector<vector<tMII>> counts(max_da+1, vector<tMII>(max_da+1));
 //	vector<vector<int_t>> runs(max_da+1, vector<int_t>(max_da+1));  
 
-	vector<int_t> runs(max_da+1);  
 	
 	#if TIME
 	  printf("#2. RMQ:\n");
@@ -1003,6 +1002,7 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 	
 		//init
 		tVMII t(max_da+1);
+		vector<int_t> runs(max_da+1);  
 
 		for(size_t p=d+1; p < da.size()+max_da; p=N[p]){
 
