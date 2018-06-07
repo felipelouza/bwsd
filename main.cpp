@@ -77,9 +77,11 @@ typedef array<size_t,2> tAII;
 
 int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file);//algorithm 1
 
-int compute_all_bwsd_rmq(unsigned char **R, uint_t k, uint_t n, char* c_file);//Simon's algorithm 
+int compute_all_bwsd_rmq_Nk(unsigned char **R, uint_t k, uint_t n, char* c_file);//Simon's algorithm 
 
-int compute_all_bwsd_nk(unsigned char **R, uint_t k, uint_t n, char* c_file);//Simon's algorithm 
+int compute_all_bwsd_rmq_Nz(unsigned char **R, uint_t k, uint_t n, char* c_file);//Simon's algorithm 
+
+int compute_all_bwsd_Nk(unsigned char **R, uint_t k, uint_t n, char* c_file);//Simon's algorithm 
 
 int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file);//brute force
 
@@ -123,9 +125,9 @@ int main(int argc, char** argv){
 			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
 
-		case 2:	printf("## BWSD_RMQ ##\n"); //Simon's algorithm 
+		case 2:	printf("## BWSD_RMQ_Nz ##\n"); //Simon's algorithm O(N+z)
 			time_start(&t_start, &c_start);
-      compute_all_bwsd_rmq(R, k, n, c_file);
+			compute_all_bwsd_rmq_Nz(R, k, n, c_file);
 			printf("TOTAL:\n");
 			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
@@ -138,6 +140,13 @@ int main(int argc, char** argv){
 			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
 		
+		case 4:	printf("## BWSD_RMQ_Nk ##\n"); //Simon's algorithm O(Nk)
+			time_start(&t_start, &c_start);
+			compute_all_bwsd_rmq_Nk(R, k, n, c_file);
+			printf("TOTAL:\n");
+			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
+			break;
+
 		default: break;
 	}
 
@@ -838,7 +847,7 @@ return 0;
 
 /******************************************************************************/
 
-int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//Simon's algorithm 
+int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file){//Simon's algorithm 
 
 	int_t i;
 	
@@ -880,7 +889,7 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 	
 	//COMPUTE DA:
 	/**/
-	if(!load_from_cache(da, "da", m_config)){
+	if(!load_from_cache(da, "da_rmq", m_config)){
 	
 		int_t *SA = new int_t[n];
 		int_t *DA = new int_t[n];
@@ -889,7 +898,304 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 		gsacak(str, (uint_t*)SA, NULL, DA, (uint_t)n); //construct SA+DA
 	
 		for(i=0;i<n;i++) da[i]=DA[i];
-		store_to_cache(da, "da", m_config);
+		store_to_cache(da, "da_rmq", m_config);
+	
+		delete[] SA;
+		delete[] DA;
+	}
+	
+	free(str);
+
+	#if WORST_CASE
+		int_t j1, j2=0;
+		for(int_t i=0; i<k; i++){
+			j1 = i*(n/k)+1;
+			j2 = (i+1)*(n/k)+1;
+			for(int_t j=j1; j<j2 && j<n; j++)
+				da[j]=i;
+		}
+		for(int_t j=j2; j<n; j++)
+				da[j]=k;
+		//cout<<"DA: "; for(int_t i=0; i<n; i++) cout<<da[i]<<" ";cout<<endl;
+	#endif
+
+	#if OUTPUT
+		//tVMID	result(k);
+		size_t m = (k*k-k)/2.0;
+		double *Md = new double[m];
+	#endif
+	
+	#if TIME
+		printf("#1. DA:\n");
+		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
+	#endif
+	
+	auto max_da = *std::max_element(da.begin(), da.end());
+
+	#if DEBUG  
+		cout << max_da << endl;
+		auto print_array = [](int_vector<64>& vec, string label) {
+			cout << label << ":";
+			for(const auto& x : vec) {
+				cout << " " << setw(2) << x;
+			}
+		  cout << endl;
+		}; 
+		print_array(da, "da  ");
+	#endif  
+	
+	int_vector<64> P(da.size(), da.size());
+	int_vector<64> N(da.size()+1, 0);
+	int_vector<64> R(da.size(), 0);
+	
+	{
+		int_vector<64> last_occ(max_da+1, 0);
+		for (size_t i=0; i < da.size(); ++i) {
+			P[i] = last_occ[da[i]];
+			last_occ[da[i]] = i+1;
+		}
+	}
+	#if DEBUG
+	  print_array(P, "P+1");
+	#endif
+	{
+		vector<uint64_t> next_occ(max_da+1, da.size());
+		for(size_t i=da.size(); i > 0; --i) {
+			N[i-1] = next_occ[da[i-1]];
+			next_occ[da[i-1]] = i-1;
+		}
+//FELIPE
+		N[da.size()]=da.size()+max_da;
+	}
+	#if DEBUG
+		print_array(N, "N  ");
+	#endif
+	{
+		for(size_t i=0; i<da.size(); ++i){
+			if ( P[i] > 0 ) {
+				R[i] = R[P[i]-1]+1;
+			}
+		}
+	}
+	#if DEBUG
+	  print_array(R, "R  ");
+	#endif
+	
+	rmq_succinct_sct<true>  rmq_P(&P);
+	rmq_succinct_sct<false> RMQ_N(&N);
+	
+	vector<size_t> seen(max_da+1,0); 
+	stack<size_t>  seen_stack;
+	vector<size_t> freq(max_da+1,0); 
+	vector<size_t> last_occ(max_da+1, 0);
+	
+//	vector<vector<tMII>> counts(max_da+1, vector<tMII>(max_da+1));
+//	vector<vector<int_t>> runs(max_da+1, vector<int_t>(max_da+1));  
+
+	vector<int_t> runs(max_da+1);  
+	
+	#if TIME
+	  printf("#2. RMQ:\n");
+		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
+	#endif
+	
+	for(size_t d=0; d < max_da; d++){
+	
+		//init
+		tVMII t(max_da+1);
+
+		for(size_t p=d+1; p < da.size()+max_da; p=N[p]){
+
+			i=p;
+
+			//size_t d  = i < da.size() ? da[i] : i-da.size();
+
+			size_t lb = last_occ[d];
+			size_t rb = i < da.size() ? i-1 : da.size()-1;
+			last_occ[d] = i+1;
+			
+			#if DEBUG == 2
+			  cout << "i="<<setw(2)<<i<<" d="<<setw(2)<<d<<" ["<<lb<<","<<rb<<"] ";
+			#endif
+			
+			stack<tAII> ranges;
+			push_if_not_empty(ranges, {lb,rb});
+			while ( !ranges.empty() ) {
+				size_t _lb = ranges.top()[0];
+				size_t _rb = ranges.top()[1];
+				ranges.pop();
+				size_t _m = rmq_P(_lb, _rb);
+
+				if ( P[_m] < lb+1 ) { // equiv P[_m]-1 < lb 
+					if(da[_m]>d){
+						seen_stack.push(da[_m]);
+						freq[da[_m]] = R[_m];
+					}
+					push_if_not_empty(ranges, {_lb, _m-1});
+					push_if_not_empty(ranges, {_m+1, _rb});
+				}
+			}
+			#if DEBUG 
+			  cout << " unique docs: " << seen_stack.size() << " ";
+			#endif
+			
+			push_if_not_empty(ranges, {lb,rb});
+			while ( !ranges.empty() ) {
+				size_t _lb = ranges.top()[0];
+				size_t _rb = ranges.top()[1];
+				ranges.pop();
+				size_t _m = RMQ_N(_lb, _rb);
+				if ( N[_m] > rb ) {
+					if(da[_m]>d){
+						freq[da[_m]] = R[_m] - freq[da[_m]] + 1;
+					}
+					push_if_not_empty(ranges, {_m+1, _rb});
+					push_if_not_empty(ranges, {_lb, _m-1});
+				}
+			}
+			
+			while( !seen_stack.empty() ) {
+				auto x = seen_stack.top();
+				seen_stack.pop();
+				#if DEBUG 
+				  cout << d << " (d="<<x<<", f="<<freq[x]<<")\n";
+				#endif
+				t[x][freq[x]]++;
+				++runs[x];
+			}
+
+			#if DEBUG
+			  cout << endl;
+			#endif
+		}
+
+		//count runs for S_d
+		for(size_t j=d+1; j<max_da; j++){
+		
+			size_t next_d = d+1;
+			size_t next_j = j+1;
+
+
+			while(next_d<da.size()){
+				size_t sum=0;
+
+				while(next_d < next_j){
+					sum++;
+					next_d = N[next_d];
+				}
+
+				while(next_j < next_d){
+					next_j = N[next_j];
+				}
+
+				t[j][sum]++;
+				++runs[j];
+			}
+
+			Result(d,j) = compute_distance(t[j], runs[j]);
+		}
+
+	}
+	
+/*
+	for(size_t i=0; i<=max_da; ++i){
+		for(size_t j=i+1; j<=max_da; ++j) {
+			Result(i,j) = compute_distance(counts[i][j], runs[i][j]);
+		}
+	}
+*/
+
+	#if TIME
+		printf("#3. BWSD-RMQ:\n");
+		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
+	#endif
+	
+	#if DEBUG
+		#if OUTPUT
+			for(int_t i=0; i<k; i++){
+				for(int_t j=0; j<i; j++){
+					printf("%.2lf\t", Result(j,i));
+				}
+				printf("0.00\t");
+				for(int_t j=i+1; j<k; j++){
+					printf("%.2lf\t", Result(i,j));
+				}
+				cout<<endl;
+			}
+		#endif
+	#endif
+	
+	//checksum: for the sake of sanity
+	#if OUTPUT
+		double sum=0.0;
+		for(int_t i=0; i<k; i++)
+			for(int_t j=i+1; j<k; j++)
+				sum+=Result(i,j);
+	
+		printf("checksum = %lf\n",sum);
+	#endif
+    
+	#if OUTPUT
+		delete[] Md;
+	#endif
+
+return 0;
+}
+
+/******************************************************************************/
+
+int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file){//Simon's algorithm O(N+z)
+
+	int_t i;
+	
+	//Concatenate strings
+	/**/
+	unsigned char *str = cat_all(S, k, &n);
+	
+	printf("K = %" PRId32 "\n", k);
+	printf("N = %" PRIdN " bytes\n", n);
+	printf("OUTPUT = %d\n", OUTPUT);
+	printf("sizeof(int) = %zu bytes\n", sizeof(int_t));
+	
+	#if DEBUG
+		printf("R:\n");
+		for(i=0; i<k; i++)
+			printf("%" PRIdN ") %s (%zu)\n", i, S[i], strlen((char*)S[i]));
+	#endif
+	
+	//free memory
+	for(i=0; i<k; i++)
+		free(S[i]);
+	free(S);
+	
+	/**/
+	
+	string dir = "sdsl";
+	mkdir(dir.c_str());
+	string id = c_file;
+	id += "."+to_string(k);
+	
+	cache_config m_config(true, dir, id);
+	int_vector<64> da(n);
+	//vector<uint64_t> da(n);
+	
+	#if TIME
+	  time_t t_start=0;clock_t c_start=0;
+		time_start(&t_start, &c_start); 
+	#endif
+	
+	//COMPUTE DA:
+	/**/
+	if(!load_from_cache(da, "da_rmq", m_config)){
+	
+		int_t *SA = new int_t[n];
+		int_t *DA = new int_t[n];
+		
+		for(i=0; i<n; i++) SA[i]=DA[i]=0;
+		gsacak(str, (uint_t*)SA, NULL, DA, (uint_t)n); //construct SA+DA
+	
+		for(i=0;i<n;i++) da[i]=DA[i];
+		store_to_cache(da, "da_rmq", m_config);
 	
 		delete[] SA;
 		delete[] DA;
@@ -1085,6 +1391,8 @@ int compute_all_bwsd_rmq(unsigned char** S, uint_t k, uint_t n, char* c_file){//
 
 return 0;
 }
+
+
 /******************************************************************************/
 
 int compute_all_bwsd_nk(unsigned char** S, uint_t k, uint_t n, char* c_file){//Simon's algorithm 
