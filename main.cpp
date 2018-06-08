@@ -56,7 +56,7 @@ using namespace std;
 
 //debug purposes
 #ifndef WORST_CASE 
-  #define WORST_CASE 0
+  #define WORST_CASE 1
 #endif
 
 
@@ -324,10 +324,18 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file){
 			for(int_t j=j1; j<j2 && j<n; j++)
 				da[j]=i;
 		}
-		for(int_t j=j2; j<n; j++)
-				da[j]=k;
-		//cout<<"DA: "; for(int_t i=0; i<n; i++) cout<<da[i]<<" ";cout<<endl;
+		da[j2-1]=k-1;
+		n=j2;
+		#if DEBUG
+			cout<<"DA: "; 
+			for(int_t i=1; i<n; i++){
+					if(da[i]!=da[i-1]) cout<<endl; 
+					cout<<da[i]<<" ";
+			}
+			cout<<endl;		
+		#endif
 	#endif
+
 
 	#if OUTPUT
 		//tVMID	result(k);
@@ -350,9 +358,9 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file){
 	#else
 
 		#if SD_VECTOR
-			sd_vector_builder *B = new sd_vector_builder[k];
+			sd_vector_builder *B = new sd_vector_builder[k+1];
 		
-			int_t *size = new int_t[k];
+			int_t *size = new int_t[k+1];
 			for(int_t i=0; i<k; i++) size[i]=0;
 			for(int_t i=1; i<n; i++) size[da[i]]++;
 
@@ -745,11 +753,19 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 			gsacak(str, (uint_t*)SA, NULL, DA, (uint_t)n); //construct SA+DA
 
 			#if WORST_CASE
+				if(n%2==0) n=n-1;
 				int_t j1=1;
 				int_t j2=n/2+1;
 				for(int_t i=j1; i<j2; i++) DA[i]=0;
 				for(int_t i=j2; i<n;	i++) DA[i]=1;
-				//cout<<"DA: "; for(int_t i=0; i<n; i++) cout<<DA[i]<<" ";cout<<endl;
+				#if DEBUG
+					cout<<"DA: "; 
+					for(int_t i=1; i<n; i++){
+							if(DA[i]!=DA[i-1]) cout<<endl; 
+							cout<<DA[i]<<" ";
+					}
+					cout<<endl;		
+				#endif
 			#endif
 
 			#if DEBUG 
@@ -914,9 +930,17 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 			for(int_t j=j1; j<j2 && j<n; j++)
 				da[j]=i;
 		}
-		for(int_t j=j2; j<n; j++)
-				da[j]=k;
-		//cout<<"DA: "; for(int_t i=0; i<n; i++) cout<<da[i]<<" ";cout<<endl;
+		da[j2-1]=k-1;
+		n=j2;
+		da.resize(n);
+		#if DEBUG
+			cout<<"DA: "; 
+			for(int_t i=1; i<n; i++){
+					if(da[i]!=da[i-1]) cout<<endl; 
+					cout<<da[i]<<" ";
+			}
+			cout<<endl;		
+		#endif
 	#endif
 
 	#if OUTPUT
@@ -1004,7 +1028,17 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 		tVMII t(max_da+1);
 		vector<int_t> runs(max_da+1);  
 
-		for(size_t p=d+1; p < da.size()+max_da; p=N[p]){
+		size_t p=d+1;
+		#if WORST_CASE
+			p = d*(n/k)+1;
+//cout<<"p = "<<p<<endl;
+//cout<<"da[p-1] = "<<da[p-1]<<endl;
+//cout<<"da[p] = "<<da[p]<<endl;
+//cout<<"da[p+1] = "<<da[p+1]<<endl;
+//continue;
+		#endif
+
+		for(; p < da.size()+max_da; p=N[p]){
 
 			i=p;
 
@@ -1055,13 +1089,13 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 			}
 			
 			while( !seen_stack.empty() ) {
-				auto x = seen_stack.top();
+				auto j = seen_stack.top();
 				seen_stack.pop();
 				#if DEBUG 
-				  cout << d << " (d="<<x<<", f="<<freq[x]<<")\n";
+				  cout << d << " (d="<<j<<", f="<<freq[j]<<")\n";
 				#endif
-				t[x][freq[x]]++;
-				++runs[x];
+				t[j][freq[j]]++;
+				++runs[j];
 			}
 
 			#if DEBUG
@@ -1075,6 +1109,10 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 			size_t next_d = d+1;
 			size_t next_j = j+1;
 
+			#if WORST_CASE
+				next_d = d*(n/k)+1;
+				next_j = j*(n/k)+1;
+			#endif
 
 			while(next_d<da.size()){
 				size_t sum=0;
@@ -1083,28 +1121,17 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 					sum++;
 					next_d = N[next_d];
 				}
-
 				while(next_j < next_d){
 					next_j = N[next_j];
 				}
-
 				t[j][sum]++;
 				++runs[j];
 			}
-
 			Result(d,j) = compute_distance(t[j], runs[j]);
 		}
 
 	}
 	
-/*
-	for(size_t i=0; i<=max_da; ++i){
-		for(size_t j=i+1; j<=max_da; ++j) {
-			Result(i,j) = compute_distance(counts[i][j], runs[i][j]);
-		}
-	}
-*/
-
 	#if TIME
 		printf("#3. BWSD-RMQ:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
@@ -1211,9 +1238,17 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file)
 			for(int_t j=j1; j<j2 && j<n; j++)
 				da[j]=i;
 		}
-		for(int_t j=j2; j<n; j++)
-				da[j]=k;
-		//cout<<"DA: "; for(int_t i=0; i<n; i++) cout<<da[i]<<" ";cout<<endl;
+		da[j2-1]=k-1;
+		n=j2;
+		da.resize(n);
+		#if DEBUG
+			cout<<"DA: "; 
+			for(int_t i=1; i<n; i++){
+					if(da[i]!=da[i-1]) cout<<endl; 
+					cout<<da[i]<<" ";
+			}
+			cout<<endl;		
+		#endif
 	#endif
 
 	#if OUTPUT
