@@ -3,7 +3,7 @@ VLIB= -g -O0
 
 LIB_DIR = ${HOME}/lib
 INC_DIR = ${HOME}/include
-MY_CXX_FLAGS= -std=c++14 -Wall -DNDEBUG -D__STDC_FORMAT_MACROS -fomit-frame-pointer -Wno-char-subscripts -Wno-sign-compare
+MY_CXX_FLAGS= -std=c++14 -Wall -DNDEBUG -D__STDC_FORMAT_MACROS -fomit-frame-pointer -Wno-char-subscripts -Wno-sign-compare -Wno-vla
 #-D_FILE_OFFSET_BITS=64
 
 MY_CXX_OPT_FLAGS= -O3 -m64 
