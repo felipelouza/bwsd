@@ -271,6 +271,10 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		cout<<"OPT_VERSION"<<endl;
 	#endif
 
+	#if WORST_CASE 
+		cout<<"WORST_CASE"<<endl;
+	#endif
+
 	#if DEBUG
 		printf("R:\n");
 		for(i=0; i<k; i++)
@@ -717,6 +721,10 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 	printf("sizeof(int) = %zu bytes\n", sizeof(int_t));
 	printf("OUTPUT = %d\n", OUTPUT);
 
+	#if WORST_CASE 
+		cout<<"WORST_CASE"<<endl;
+	#endif
+
 	#if DEBUG
 		printf("R:\n");
 		for(int_t i=0; i<k; i++)
@@ -882,6 +890,14 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 			printf("%" PRIdN ") %s (%zu)\n", i, S[i], strlen((char*)S[i]));
 	#endif
 	
+	#if OPT_VERSION 
+		cout<<"OPT_VERSION"<<endl;
+	#endif
+
+	#if WORST_CASE 
+		cout<<"WORST_CASE"<<endl;
+	#endif
+
 	//free memory
 	for(i=0; i<k; i++)
 		free(S[i]);
@@ -988,7 +1004,6 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 			N[i-1] = next_occ[da[i-1]];
 			next_occ[da[i-1]] = i-1;
 		}
-//FELIPE
 		N[da.size()]=da.size()+max_da;
 	}
 	#if DEBUG
@@ -1013,6 +1028,8 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 	vector<size_t> freq(max_da+1,0); 
 	vector<size_t> last_occ(max_da+1, 0);
 	
+	int_t *ell = new int_t[k];
+
 //	vector<vector<tMII>> counts(max_da+1, vector<tMII>(max_da+1));
 //	vector<vector<int_t>> runs(max_da+1, vector<int_t>(max_da+1));  
 
@@ -1031,11 +1048,10 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 		size_t p=d+1;
 		#if WORST_CASE
 			p = d*(n/k)+1;
-//cout<<"p = "<<p<<endl;
-//cout<<"da[p-1] = "<<da[p-1]<<endl;
-//cout<<"da[p] = "<<da[p]<<endl;
-//cout<<"da[p+1] = "<<da[p+1]<<endl;
-//continue;
+		#endif
+
+		#if OPT_VERSION
+			for(int_t j=d+1; j<k; j++) ell[j]=0;
 		#endif
 
 		for(; p < da.size()+max_da; p=N[p]){
@@ -1094,6 +1110,15 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 				#if DEBUG 
 				  cout << d << " (d="<<j<<", f="<<freq[j]<<")\n";
 				#endif
+
+				#if OPT_VERSION
+					if(ell[j]){
+						t[j][ell[j]]++;  //0^lj
+						++runs[j];
+						ell[j]=0;
+					}
+				#endif
+
 				t[j][freq[j]]++;
 				++runs[j];
 			}
@@ -1101,32 +1126,44 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 			#if DEBUG
 			  cout << endl;
 			#endif
+
+			#if OPT_VERSION
+				if(p<da.size())
+					for(int_t j=d+1; j<k; j++) ell[j]++;//considers that S_j does not occur in [lb, rb]
+			#endif
 		}
 
 		//count runs for S_d
 		for(size_t j=d+1; j<max_da; j++){
-		
-			size_t next_d = d+1;
-			size_t next_j = j+1;
 
-			#if WORST_CASE
-				next_d = d*(n/k)+1;
-				next_j = j*(n/k)+1;
+			#if OPT_VERSION
+				if(ell[j]){
+					t[j][ell[j]]++;  //0^lj
+					++runs[j];
+				}
+			#else
+				size_t next_d = d+1;
+				size_t next_j = j+1;
+	
+				#if WORST_CASE
+					next_d = d*(n/k)+1;
+					next_j = j*(n/k)+1;
+				#endif
+	
+				while(next_d<da.size()){
+					size_t sum=0;
+	
+					while(next_d < next_j){
+						sum++;
+						next_d = N[next_d];
+					}
+					while(next_j < next_d){
+						next_j = N[next_j];
+					}
+					t[j][sum]++;
+					++runs[j];
+				}
 			#endif
-
-			while(next_d<da.size()){
-				size_t sum=0;
-
-				while(next_d < next_j){
-					sum++;
-					next_d = N[next_d];
-				}
-				while(next_j < next_d){
-					next_j = N[next_j];
-				}
-				t[j][sum]++;
-				++runs[j];
-			}
 			Result(d,j) = compute_distance(t[j], runs[j]);
 		}
 
@@ -1166,6 +1203,8 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 		delete[] Md;
 	#endif
 
+	delete[] ell;
+
 return 0;
 }
 
@@ -1183,6 +1222,10 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file)
 	printf("N = %" PRIdN " bytes\n", n);
 	printf("OUTPUT = %d\n", OUTPUT);
 	printf("sizeof(int) = %zu bytes\n", sizeof(int_t));
+
+	#if WORST_CASE 
+		cout<<"WORST_CASE"<<endl;
+	#endif
 	
 	#if DEBUG
 		printf("R:\n");
@@ -1442,6 +1485,10 @@ int compute_all_bwsd_nk(unsigned char** S, uint_t k, uint_t n, char* c_file){//S
 	printf("N = %" PRIdN " bytes\n", n);
 	printf("OUTPUT = %d\n", OUTPUT);
 	printf("sizeof(int) = %zu bytes\n", sizeof(int_t));
+
+	#if WORST_CASE 
+		cout<<"WORST_CASE"<<endl;
+	#endif
 	
 	#if DEBUG
 		printf("R:\n");
