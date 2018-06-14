@@ -330,6 +330,8 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file){
 		}
 		da[j2-1]=k-1;
 		n=j2;
+		da.resize(n);
+		store_to_cache(da, "da", m_config);
 		#if DEBUG
 			cout<<"DA: "; 
 			for(int_t i=1; i<n; i++){
