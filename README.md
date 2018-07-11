@@ -1,6 +1,6 @@
-# all-bwsd 
+# bwsd 
 
-This code is an implementation of three algorithms [1] that compute all-pairs of Burrows-Wheeler similarity distributions (BWSD) for a string collection.
+This code is an implementation of three algorithms [1] to compute all-pairs of Burrows-Wheeler similarity distributions (BWSD) for a string collection.
 
 # run
 
@@ -71,4 +71,4 @@ make run DIR=dataset/ INPUT=input.100.txt K=5 MODE=1
 ## References
 
 \[1\] 
-Louza, F. A., & Telles, G. P. & Gog, S. & Zhao, L.: Computing Burrows-Wheeler Similarity Distributions for String Collections, 2018, submitted. 
+Louza, F. A., & Telles, G. P. & Gog, S. & Zhao, L.: Computing Burrows-Wheeler Similarity Distributions for String Collections, 2018, To appear in Proc. SPIRE, 1-12. 

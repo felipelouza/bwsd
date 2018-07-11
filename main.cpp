@@ -77,13 +77,11 @@ typedef array<size_t,2> tAII;
 
 int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file);//algorithm 1
 
-int compute_all_bwsd_rmq_Nk(unsigned char **R, uint_t k, uint_t n, char* c_file);//Simon's algorithm 
+int compute_all_bwsd_rmq_Nk(unsigned char **R, uint_t k, uint_t n, char* c_file);//algorithm 2
 
-int compute_all_bwsd_rmq_Nz(unsigned char **R, uint_t k, uint_t n, char* c_file);//Simon's algorithm 
+int compute_all_bwsd_rmq_Nz(unsigned char **R, uint_t k, uint_t n, char* c_file);//algorithm 2
 
-int compute_all_bwsd_Nk(unsigned char **R, uint_t k, uint_t n, char* c_file);//Simon's algorithm 
-
-int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file);//brute force
+int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file);//straightforward
 
 /******************************************************************************/
 
@@ -118,14 +116,14 @@ int main(int argc, char** argv){
 
 	switch(MODE){
 
-		case 1: printf("## BWSD_RANK ##\n"); 
+		case 1: printf("## BWSD_RANK ##\n"); //Algorithm 1, O(Nk) time
 			time_start(&t_start, &c_start);
 			compute_all_bwsd_rank(R, k, n, c_file);
 			printf("TOTAL:\n");
 			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
 
-		case 2:	printf("## BWSD_RMQ_Nz ##\n"); //Simon's algorithm O(N+z)
+		case 2:	printf("## BWSD_RMQ_Nz ##\n"); //Algorithm 2, O(N+z) time
 			time_start(&t_start, &c_start);
 			compute_all_bwsd_rmq_Nz(R, k, n, c_file);
 			printf("TOTAL:\n");
@@ -140,7 +138,7 @@ int main(int argc, char** argv){
 			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
 		
-		case 4:	printf("## BWSD_RMQ_Nk ##\n"); //Simon's algorithm O(Nk)
+		case 4:	printf("## BWSD_RMQ_Nk ##\n"); //Algorithm 2, O(Nk) time
 			time_start(&t_start, &c_start);
 			compute_all_bwsd_rmq_Nk(R, k, n, c_file);
 			printf("TOTAL:\n");
@@ -771,10 +769,10 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file){//brut
 				#if DEBUG
 					cout<<"DA: "; 
 					for(int_t i=1; i<n; i++){
-							if(DA[i]!=DA[i-1]) cout<<endl; 
-							cout<<DA[i]<<" ";
+						if(DA[i]!=DA[i-1]) cout<<endl; 
+						cout<<DA[i]<<" ";
 					}
-					cout<<endl;		
+					cout<<endl;
 				#endif
 			#endif
 
@@ -873,7 +871,7 @@ return 0;
 
 /******************************************************************************/
 
-int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file){//Simon's algorithm 
+int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file){
 
 	int_t i;
 	
@@ -954,8 +952,8 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file)
 		#if DEBUG
 			cout<<"DA: "; 
 			for(int_t i=1; i<n; i++){
-					if(da[i]!=da[i-1]) cout<<endl; 
-					cout<<da[i]<<" ";
+				if(da[i]!=da[i-1]) cout<<endl; 
+				cout<<da[i]<<" ";
 			}
 			cout<<endl;		
 		#endif
@@ -1212,7 +1210,7 @@ return 0;
 
 /******************************************************************************/
 
-int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file){//Simon's algorithm O(N+z)
+int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file){
 
 	int_t i;
 	
