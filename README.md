@@ -15,19 +15,19 @@ Note: all algorithms need [sdsl-lite](https://github.com/simongog/sdsl-lite).
 ### Alg. 1
 
 ```sh
-make run DIR=dataset/ INPUT=input.100.txt K=5 MODE=1
+./bwsd dataset/input.100.txt 5 -M 1
 ```
 
 ### Alg. 2
 
 ```sh
-make run DIR=dataset/ INPUT=input.100.txt K=5 MODE=2
+./bwsd dataset/input.100.txt 5 -M 2
 ```
 
 ### Straightforward
 
 ```sh
-make run DIR=dataset/ INPUT=input.100.txt K=5 MODE=3
+./bwsd dataset/input.100.txt 5 -M 3
 ```
 
 ## options
@@ -48,7 +48,7 @@ To see the output matrix:
 
 ```sh
 make DEBUG=1
-make run DIR=dataset/ INPUT=input.100.txt K=5 MODE=3
+./bwsd dataset/input.100.txt 5 -M 1
 ```
 
 
@@ -58,14 +58,14 @@ Using sparse bitvectors (sd\_vector):
 
 ```sh
 make SD_VECTOR=1
-make run DIR=dataset/ INPUT=input.100.txt K=5 MODE=1
+./bwsd dataset/input.100.txt 5 -M 1
 ```
 
 Using wavelet tree:
 
 ```sh
 make WT=1
-make run DIR=dataset/ INPUT=input.100.txt K=5 MODE=1
+./bwsd dataset/input.100.txt 5 -M 1
 ```
 
 ## References

@@ -1,3 +1,5 @@
+// vim: noai:ts=4:sw=4
+
 /*
  * BWSD 
  *
@@ -85,25 +87,58 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file);//stra
 
 /******************************************************************************/
 
+void usage(char *name){
+  printf("\n\tUsage: %s [options] FILE K\n\n",name);
+  puts("Computes the BWSD for the first K sequences of a collection.");
+//  puts("Sequences from FILE are extracted according to FILE's");
+  puts("Extension; currently supported extensions are: .txt .fasta .fastq\n");
+  puts("Available options:");
+  puts("\t-h    this help message");
+  puts("\t-M m  preferred algorithm to use (see doc or leave it alone)");
+  puts("\t-T t  running with t threads");
+  puts("\t-v    verbose output\n");
+  exit(EXIT_FAILURE);
+}
+
+/******************************************************************************/
+
 int main(int argc, char** argv){
 
 	time_t t_start=0;clock_t c_start=0;
 
-	int MODE=0;
+	extern char *optarg;
+	extern int optind;
+	int c;
+	char *c_dir=NULL, *c_file=NULL, *c_input=NULL;
 
-	if(argc!=5){
-		dies(__func__,NULL);
+	int VERBOSE=0;
+	int MODE=1;
+	int k;
+
+	while ((c=getopt(argc, argv, "vM:h")) != -1) {
+		switch (c) {
+			case 'v':
+				VERBOSE++; break;
+			case 'M':
+				MODE = atoi(optarg); break;
+			case 'h':
+				usage(argv[0]); break;      // show usage and stop
+			case '?':
+				exit(EXIT_FAILURE);
+		}
 	}
+
+	if(optind+2==argc) {
+		c_input=argv[optind++];
+		k = (int) atoi(argv[optind++]);
+	}
+	else  usage(argv[0]);
+
+	c_file= strrchr(c_input, '/')+1;
+	c_dir = strndup(c_input, strlen(c_input)-strlen(c_file));
 
 	unsigned char **R;
 	int_t n=0;
-	int   k;
-
-	char* c_dir = argv[1];
-	char* c_file = argv[2];
-
-	sscanf(argv[3], "%d", &k);
-	sscanf(argv[4], "%u", &MODE);
 
 	file_chdir(c_dir);
 
@@ -112,6 +147,15 @@ int main(int argc, char** argv){
 	if(!R){
 		fprintf(stderr, "Error: less than %d strings in %s\n", k, c_file);
 		return 0;
+	}
+
+	if(VERBOSE){
+		printf("########\n");
+		printf("DIR = %s\n", c_dir);
+		printf("INPUT = %s\n", c_file);
+		printf("MODE = %d\n", MODE);
+		printf("K = %d\n", k);
+		printf("########\n");
 	}
 
 	switch(MODE){

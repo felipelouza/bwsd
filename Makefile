@@ -64,7 +64,7 @@ lib: lib/file.c lib/utils.c external/gsacak.c external/malloc_count/malloc_count
 
 
 compile: lib main.cpp ${LIBOBJ} 
-	$(MY_CXX) $(CXX_FLAGS) main.cpp $(CCLIB) -o all-bwsd ${LIBOBJ} 
+	$(MY_CXX) $(CXX_FLAGS) main.cpp $(CCLIB) -o bwsd ${LIBOBJ} 
 
 compile-rmq: tmp/bwsd_rmq.cpp 
 	$(MY_CXX) $(CXX_FLAGS) tmp/bwsd_rmq.cpp $(CCLIB)  -o tmp/bwsd-rmq
@@ -73,7 +73,7 @@ compile-rmq-nk: tmp/bwsd_rmq_nk.cpp
 	$(MY_CXX) $(CXX_FLAGS) tmp/bwsd_rmq_nk.cpp $(CCLIB)  -o tmp/bwsd-rmq-nk
 
 run:
-	./all-bwsd $(DIR) $(INPUT) $(K) $(MODE)
+	./bwsd $(DIR)$(INPUT) $(K) -M $(MODE)
 
 valgrind:
-	valgrind --tool=memcheck --leak-check=full --track-origins=yes ./all-bwsd $(DIR) $(INPUT) $(K) $(MODE) 
+	valgrind --tool=memcheck --leak-check=full --track-origins=yes ./bwsd $(DIR)$(INPUT) $(K) -M $(MODE) 
