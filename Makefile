@@ -53,7 +53,10 @@ MODE 	= 1
 all: compile
 
 clean:
-	\rm -f *.o  external/*.o lib/*o external/malloc_count/*.o all-bwsd
+	\rm -f *.o  external/*.o lib/*o external/malloc_count/*.o bwsd
+
+remove:
+	\rm -f $(DIR)*.bin $(DIR)sdsl/*
 
 ##
 
@@ -65,12 +68,6 @@ lib: lib/file.c lib/utils.c external/gsacak.c external/malloc_count/malloc_count
 
 compile: lib main.cpp ${LIBOBJ} 
 	$(MY_CXX) $(CXX_FLAGS) main.cpp $(CCLIB) -o bwsd ${LIBOBJ} 
-
-compile-rmq: tmp/bwsd_rmq.cpp 
-	$(MY_CXX) $(CXX_FLAGS) tmp/bwsd_rmq.cpp $(CCLIB)  -o tmp/bwsd-rmq
-
-compile-rmq-nk: tmp/bwsd_rmq_nk.cpp 
-	$(MY_CXX) $(CXX_FLAGS) tmp/bwsd_rmq_nk.cpp $(CCLIB)  -o tmp/bwsd-rmq-nk
 
 run:
 	./bwsd $(DIR)$(INPUT) $(K) -M $(MODE)
