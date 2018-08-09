@@ -1,12 +1,8 @@
-# bwsd: Burrows-Wheeler Similarity Distributions for String Collections
+# bwsd tool: 
 
-This code is an implementation of the algorithms described in \[[1](https://github.com/felipelouza/bwsd#references)\] to compute all-pairs of **Burrows-Wheeler similarity distributions (BWSD)** for a string collection.
+This software is an implementation of the algorithms described in \[[1](https://github.com/felipelouza/bwsd#references)\] to compute all-pairs of **Burrows-Wheeler similarity distributions (BWSD)** for a string collection.
 
-Given a collection of _d_ strings, _bwsd_ outputs `option -o`:
-
-* A matrix M<sub>dxd</sub> with all pairs of BWSD-based distances.
-
-_Note:_ we compute only the (d<sup>2</sup>-d)/2 entries of M<sub>dxd</sub> (upper triangular matrix), which can be accessed as in [here](https://github.com/felipelouza/bwsd/blob/master/main.cpp#L312)
+Given a collection of _d_ strings, _bwsd_ computes a matrix M<sub>dxd</sub> with all pairs of BWSD-based distances.
 
 ## install
 
@@ -16,7 +12,7 @@ cd bwsd
 make compile
 ```
 
-_Note:_ all algorithms need [sdsl-lite](https://github.com/simongog/sdsl-lite).
+_Note:_ our implementaion needs [sdsl-lite](https://github.com/simongog/sdsl-lite).
 
 ## run
 
@@ -37,11 +33,13 @@ Available options:
 -v    verbose output
 ```
 _Notes:_ 
-- supported extensions are _.txt_, _.fasta_ and _.fastq_.
+- Supported extensions are _.txt_, _.fasta_ and _.fastq_.
+- We compute only the (d<sup>2</sup>-d)/2 entries of M<sub>dxd</sub> (upper triangular matrix), which can be accessed as in [here](https://github.com/felipelouza/bwsd/blob/master/main.cpp#L312)
+
 
 ## quick test
 
-To run a test with d=10 strings from _dataset/input.100.txt_ using Alg. 1 `-A 1`, writing the output to disk `option -o`, type:
+To run a test with d=10 strings from [dataset/input.100.txt](https://github.com/felipelouza/bwsd/blob/master/dataset/input.100.txt) using Alg. 1 `-A 1`, writing the output to disk `option -o`, type:
 
 ```sh
 ./bwsd dataset/input.100.txt 10 -A 1 -o
@@ -50,24 +48,27 @@ _Note:_ output matrix is written to `FILE.output.bin`
 
 ## options
 
-To see the resulting matrix M<sub>dxd</sub>, use `option -p`:
+To see the resulting M<sub>dxd</sub>, computing distances based on the Shannon entropy of BWSD `option -B 2`, use `option -p`:
 
 ```sh
-./bwsd dataset/input.100.txt 10 -A 1 -o -p
+./bwsd dataset/input.100.txt 10 -A 1 -o -B 2 -p
 ```
 
+Result:
+
 ```sh
-## BWSD_BIT ##
-0.00	0.00	-0.50	-0.67	-0.80	-0.80	-0.75	-0.80	-0.80	-0.67	
-0.00	0.00	-0.50	-0.67	-0.80	-0.80	-0.75	-0.80	-0.80	-0.67	
--0.50	-0.50	0.00	-0.75	-0.75	-0.67	-0.75	-0.75	-0.75	-0.67	
--0.67	-0.67	-0.75	0.00	-0.80	-0.80	-0.80	-0.80	-0.67	-0.75	
--0.80	-0.80	-0.75	-0.80	0.00	-0.80	-0.67	-0.80	-0.83	-0.75	
--0.80	-0.80	-0.67	-0.80	-0.80	0.00	-0.75	-0.80	-0.80	-0.67	
--0.75	-0.75	-0.75	-0.80	-0.67	-0.75	0.00	-0.80	-0.83	-0.67	
--0.80	-0.80	-0.75	-0.80	-0.80	-0.80	-0.80	0.00	-0.75	-0.80	
--0.80	-0.80	-0.75	-0.67	-0.83	-0.80	-0.83	-0.75	0.00	-0.80	
--0.67	-0.67	-0.67	-0.75	-0.75	-0.67	-0.67	-0.80	-0.80	0.00
+## BWSD_BIT_sd ##
+writing 360 bytes to: input.100.txt.output.bin
+0.00	0.00	0.68	1.46	2.16	2.13	1.75	2.16	1.90	1.30	
+0.00	0.00	0.68	1.46	2.16	2.13	1.75	2.16	1.90	1.30	
+0.68	0.68	0.00	1.61	1.81	1.22	1.75	1.75	1.61	1.30	
+1.46	1.46	1.61	0.00	2.25	2.06	2.16	2.16	0.96	1.75	
+2.16	2.16	1.81	2.25	0.00	2.32	0.94	2.02	2.52	1.69	
+2.13	2.13	1.22	2.06	2.32	0.00	1.79	2.25	1.96	1.46	
+1.75	1.75	1.75	2.16	0.94	1.79	0.00	1.63	2.52	1.39	
+2.16	2.16	1.75	2.16	2.02	2.25	1.63	0.00	1.75	1.51	
+1.90	1.90	1.61	0.96	2.52	1.96	2.52	1.75	0.00	2.00	
+1.30	1.30	1.30	1.75	1.69	1.46	1.39	1.51	2.00	0.00	
 ```
 
 ## alternatives (Alg. 1)
@@ -103,7 +104,7 @@ We have included the source codes of the following algorithms:
 * gSACA-K+DA: The Burrows-Wheeler transform (BWT) and the Document array (DA) were computed using [gsaca-k](https://github.com/felipelouza/gsa-is/).
 
 
-## References
+## references
 
 \[1\] 
 Louza, F. A., & Telles, G. P. & Gog, S. & Zhao, L.: Computing Burrows-Wheeler Similarity Distributions for String Collections, 2018, To appear in Proc. SPIRE, 1-12. 
