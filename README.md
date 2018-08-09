@@ -4,6 +4,8 @@ This software is an implementation of the algorithms described in \[[1](https://
 
 Given a collection of _d_ strings, _bwsd_ computes a matrix M<sub>dxd</sub> with all pairs of BWSD-based distances.
 
+The Burrows-Wheeler transform (BWT) and the Document array (DA) were computed using [gsaca-k](https://github.com/felipelouza/gsa-is/).
+
 ## install
 
 ```sh
@@ -97,15 +99,10 @@ To see a more detailed execution use:
 make clean
 make DEBUG=1
 ```
-## external resources
-
-We have included the source codes of the following algorithms:
-
-* gSACA-K+DA: The Burrows-Wheeler transform (BWT) and the Document array (DA) were computed using [gsaca-k](https://github.com/felipelouza/gsa-is/).
-
 
 ## references
 
 \[1\] 
-Louza, F. A., & Telles, G. P. & Gog, S. & Zhao, L.: Computing Burrows-Wheeler Similarity Distributions for String Collections, 2018, To appear in Proc. SPIRE, 1-12. 
+Felipe A. Louza, Guilherme P. Telles, Simon Gog, Liang Zhao: 
+Computing Burrows-Wheeler Similarity Distributions for String Collections. To appear in Proc. SPIRE 2018: 1-12 
 
