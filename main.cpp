@@ -33,16 +33,8 @@ using namespace std;
 #include "lib/bwt.h"
 #include "external/gsacak.h"
 
-#ifndef OUTPUT 
-	#define OUTPUT 1 
-#endif
-
 #ifndef DEBUG
 	#define DEBUG 0 
-#endif
-
-#ifndef TIME
-  #define TIME 1
 #endif
 
 #ifndef WT
@@ -62,7 +54,6 @@ using namespace std;
   #define WORST_CASE 0
 #endif
 
-
 //#define Result(i,j) (result[i][j])
 #define Result(i,j) (Md[(k*(k-1)/2) - (k-i)*((k-i)-1)/2 + j - i - 1])
 
@@ -78,28 +69,28 @@ typedef array<size_t,2> tAII;
 
 /******************************************************************************/
 
-int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, int output, int check, int print);//algorithm 1
+int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, int dist, int output, int check, int print, int verbose);//algorithm 1
 
-int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file, int output, int check, int print);//straightforward
+int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file, int dist, int output, int check, int print, int verbose);//straightforward
 
-int compute_all_bwsd_rmq_Nz(unsigned char **R, uint_t k, uint_t n, char* c_file, int output, int check, int print);//algorithm 2
+int compute_all_bwsd_rmq_Nz(unsigned char **R, uint_t k, uint_t n, char* c_file, int dist, int output, int check, int print, int verbose);//algorithm 2
 
-int compute_all_bwsd_rmq_Nk(unsigned char **R, uint_t k, uint_t n, char* c_file, int output, int check, int print);//algorithm 2
+int compute_all_bwsd_rmq_Nk(unsigned char **R, uint_t k, uint_t n, char* c_file, int dist, int output, int check, int print, int verbose);//algorithm 2
 
 /******************************************************************************/
 
 void usage(char *name){
-  printf("\n\tUsage: %s [options] FILE K\n\n",name);
-  puts("Computes the BWSD for the first K sequences of a collection.");
+  printf("\n\tUsage: %s [options] FILE d\n\n",name);
+  puts("Computes BWSD-based distances for the first d sequences of a collection.");
 //  puts("Sequences from FILE are extracted according to FILE's");
   puts("Extension; currently supported extensions are: .txt .fasta .fastq\n");
   puts("Available options:");
   puts("\t-h    this help message");
-  puts("\t-A a  preferred algorithm to use (default is alg. 1)");
+  puts("\t-A a  preferred algorithm to use (default is alg. 1 BIT_sd)");
+  puts("\t-B b  BWSD-based distance to compute, options: 1. expectation (default), 2. shannon entropy");
 //	puts("\t-p P  use P parallel threads(def 0)");
   puts("\t-o    write output matrix to FILE.output.bin");
   puts("\t-p    print the output matrix (for debug)");
-  puts("\t-c    computes a ''sanity'' checksum (for debug)");
   puts("\t-v    verbose output\n");
   exit(EXIT_FAILURE);
 }
@@ -115,12 +106,12 @@ int main(int argc, char** argv){
 	int c;
 	char *c_dir=NULL, *c_file=NULL, *c_input=NULL;
 
-	int verbose=0, check=0, print=0;
+	int verbose=0, check=0, print=0, dist=1;
 	int MODE=1;//preferred algorithm
 	int k;
 	int output=0; //outputs the matrix to FILE.output.bin
 
-	while ((c=getopt(argc, argv, "vcpA:ho")) != -1) {
+	while ((c=getopt(argc, argv, "vcpA:B:ho")) != -1) {
 		switch (c) {
 			case 'v':
 				verbose++; break;
@@ -129,7 +120,9 @@ int main(int argc, char** argv){
 			case 'p':
 				print++; break;
 			case 'A':
-				MODE = atoi(optarg); break;
+				MODE = (int) atoi(optarg); break;
+			case 'B':
+				dist = (int) atoi(optarg); break;
 			case 'h':
 				usage(argv[0]); break;      // show usage and stop
 			case 'o':
@@ -164,44 +157,57 @@ int main(int argc, char** argv){
 		printf("########\n");
 		printf("DIR = %s\n", c_dir);
 		printf("FILE = %s\n", c_file);
-		printf("MODE = %d\n", MODE);
-		printf("K = %d\n", k);
+		if(output) printf("OUTPUT = %s.output.bin\n", c_file);
+		printf("Algorithm = %d\n", MODE);
+		printf("Strings = %d\n", k);
 		printf("N = %d\n", n);
+		printf("BWSD-dist: ");
+		if(dist==1) printf("Expectation (default)\n");
+		else if (dist==2) printf("Shannon entropy\n");
 		printf("sizeof(int) = %zu bytes\n", sizeof(int_t));
 		printf("########\n");
 	}
 
 	switch(MODE){
 
-		case 1: printf("## BWSD_RANK ##\n"); //Algorithm 1, O(Nk) time
+		case 1:  //Algorithm 1, O(Nk) time
+			#if WT
+				printf("## BWSD_WT ##\n");
+			#elif SD_VECTOR
+				printf("## BWSD_BIT_sd ##\n"); 
+			#else
+				printf("## BWSD_BIT ##\n");
+			#endif
 			time_start(&t_start, &c_start);
-			compute_all_bwsd_rank(R, k, n, c_file, output, check, print);
+			compute_all_bwsd_rank(R, k, n, c_file, dist, output, check, print, verbose);
 			printf("TOTAL:\n");
 			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
 
-		case 2:	printf("## BWSD_RMQ_Nz ##\n"); //Algorithm 2, O(N+z) time
+		case 2:	printf("## BWSD_RMQ_Nk ##\n"); //Algorithm 2, O(Nk) time
 			time_start(&t_start, &c_start);
-			compute_all_bwsd_rmq_Nz(R, k, n, c_file, output, check, print);
+			compute_all_bwsd_rmq_Nk(R, k, n, c_file, dist, output, check, print, verbose);
 			printf("TOTAL:\n");
 			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
 
-		case 3:	printf("## BWSD ##\n"); //Straightforward algorithm
+		case 3:	printf("## BWSD_SF ##\n"); //Straightforward algorithm
 			time_start(&t_start, &c_start);
-			compute_all_bwsd(R, k, n, c_file, output, check, print);
+			compute_all_bwsd(R, k, n, c_file, dist, output, check, print, verbose);
 			printf("TOTAL:\n");
 			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
 		
-		case 4:	printf("## BWSD_RMQ_Nk ##\n"); //Algorithm 2, O(Nk) time
+		case 4:	printf("## BWSD_RMQ_Nz ##\n"); //Algorithm 2, O(N+z) time
 			time_start(&t_start, &c_start);
-			compute_all_bwsd_rmq_Nk(R, k, n, c_file, output, check, print);
+			compute_all_bwsd_rmq_Nz(R, k, n, c_file, dist, output, check, print, verbose);
 			printf("TOTAL:\n");
 			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
 
-		default: break;
+
+		default: printf("ERROR: please, choose a valid -A options 1, 2, 3 and 4.\n");
+			break;
 	}
 
 return 0;
@@ -241,21 +247,17 @@ return str;
 
 /******************************************************************************/
 
-unsigned char* cat_all(unsigned char** R, int k, uint_t *n){
+unsigned char* cat_all(unsigned char** R, int k, uint_t *n, int verbose){
 
 	(*n)++; //add 0 at the end
 	int_t i, j, l=0;
 	unsigned char *str = (unsigned char*) malloc((*n)*sizeof(unsigned char));
 
-	#if DEBUG
-		int_t max=0;
-	#endif
+	int_t max=0;
 
 	for(i=0; i<k; i++){
 		int_t m = strlen((char*)R[i]);
-		#if DEBUG
-			if(m>max) max=m;
-		#endif
+		if(m>max) max=m;
 		for(j=0; j<m; j++){
 			if(R[i][j]<255) str[l++] = R[i][j]+1;
 		}
@@ -268,36 +270,58 @@ unsigned char* cat_all(unsigned char** R, int k, uint_t *n){
 	}
 	*n = l;
 
-	#if DEBUG
-		cout<<"longest string = "<<max<<endl;
-	#endif
+	if(verbose)	cout<<"longest string = "<<max<<endl;
 
 return str;
 }
+
+
 /******************************************************************************/
 
-double compute_distance(tMII &t, int_t s){
+double bwsd_expectation(tMII &t, int_t s){
 
-	double dist = 0.0;
+	double value = 0.0;
+	
+	for(tMII::iterator it=t.begin(); it!=t.end(); ++it){
+		if(it->second) value++;
+	}
+
+	value = 1.0/value-1.0;
+
+return value;
+}
+
+/******************************************************************************/
+
+double bwsd_shannon_entropy(tMII &t, int_t s){
+
+	double value = 0.0;
 	
 	for(tMII::iterator it=t.begin(); it!=t.end(); ++it){
 		if(it->second){
-			#if OUTPUT==1			//computes D_M
-				dist++;
-			#elif OUTPUT==2		//computes D_E
-				double tmp = (double)it->second/(double)s;
-				dist += tmp*log2(tmp);
-			#endif
+			double tmp = (double)it->second/(double)s;
+			value += tmp*log2(tmp);
 		}
 	}
 
-	#if OUTPUT==1     //computes D_M
-		dist = 1.0/dist -1.0;
-	#elif OUTPUT==2   //computes D_E
-		if(dist) 	dist *= -1.0;
-	#endif
+	if(value) value *= -1.0;
 
-return dist;
+return value;
+}
+/******************************************************************************/
+
+double compute_distance(tMII &t, int_t s, int dist){
+
+	//implemented distances
+	switch (dist) {
+		case 1:
+			return bwsd_expectation(t, s); break;
+		case 2:
+			return bwsd_shannon_entropy(t, s); break;
+		default: break;
+	}
+
+return 0.0;
 }
 /******************************************************************************/
 
@@ -359,16 +383,16 @@ return 0;
 			
 /******************************************************************************/
 
-int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, int output, int check, int print){
+int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, int dist, int output, int check, int print, int verbose){
 
 	int_t i;
 
 	//Concatenate strings
 	/**/
-	unsigned char *str = cat_all(R, k, &n);
+	unsigned char *str = cat_all(R, k, &n, verbose);
 
 	#if OPT_VERSION 
-		cout<<"OPT_VERSION"<<endl;
+		if(verbose) cout<<"OPT_VERSION"<<endl;
 	#endif
 
 	#if WORST_CASE 
@@ -396,10 +420,8 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 	cache_config m_config(true, dir, id);
 	int_vector<> da(n);
 
-	#if TIME
-	  time_t t_start=0;clock_t c_start=0;
-		time_start(&t_start, &c_start); 
-	#endif
+  time_t t_start=0;clock_t c_start=0;
+	if(verbose) time_start(&t_start, &c_start); 
 
 	//COMPUTE DA:
 	/**/
@@ -446,10 +468,10 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 	size_t m = (k*k-k)/2.0;
 	double *Md = new double[m];
  
-	#if TIME
+	if(verbose){
 		printf("#1. DA:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
-	#endif
+	}
 
 	#if WT
 		//COMPUTE WT(DA):
@@ -526,18 +548,18 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 
 	#endif //#if WT==0
 
-	#if TIME
-		#if WT
-			printf("#2. WT(DA):\n");
+	#if WT
+		if(verbose) printf("#2. WT(DA):\n");
+	#else
+		#if SD_VECTOR
+			if(verbose) printf("#2. BITMAP_SD(DA):\n");
 		#else
-			#if SD_VECTOR
-				printf("#2. BITMAP_SD(DA):\n");
-			#else
-				printf("#2. BITMAP(DA):\n");
-			#endif
+			if(verbose) printf("#2. BITMAP(DA):\n");
 		#endif
-		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 	#endif
+
+	if(verbose)
+		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
 
 	#if DEBUG	
 		cout<<"DA:"<<endl;
@@ -697,7 +719,7 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 					}
 				#endif
 
-				Result(i,j) = compute_distance(t[j], s[j]);
+				Result(i,j) = compute_distance(t[j], s[j], dist);
 				#if DEBUG
 					cout<<"["<<i<<", "<<j<<"]\t\ts="<<s[j]<<"\n";
 					cout<<"D = "<<Result(i,j)<<endl;
@@ -731,14 +753,6 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 				}
 				cout<<endl;
 
-				/*
-				for(tMII::iterator it=t[j].begin(); it!=t[j].end(); ++it){
-					if(it->second){
-						cout << "t_" << it->first << ":\t" << it->second <<endl;
-					}
-				}
-				*/
-
 				cout<<"####\t";
 			}		
 			cout<<endl;
@@ -746,10 +760,10 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 		#endif
 	}
 
-	#if TIME
+	if(verbose){
 		printf("#3. BWSD-RANK:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
-	#endif
+	}
 
 	delete[] ell;
 	delete[] s;
@@ -797,7 +811,7 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 	delete[] Md;
 
 	#if OPT_VERSION
-		cout<<"skip = "<<skip<<" / "<<total<<" = "<<(double)skip/(double)total<<endl;
+		if(verbose) cout<<"skip = "<<skip<<" / "<<total<<" = "<<(double)skip/(double)total<<endl;
 	#endif
 
 return 0;
@@ -805,10 +819,10 @@ return 0;
 
 /******************************************************************************/
 
-int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file, int output, int check, int print){ //straightforward
+int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file, int dist, int output, int check, int print, int verbose){ //straightforward
 
 	#if WORST_CASE 
-		cout<<"WORST_CASE"<<endl;
+		if(verbose) cout<<"WORST_CASE"<<endl;
 	#endif
 
 	#if DEBUG
@@ -837,10 +851,8 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file, int ou
 			int_t s= 0;
 			//concatenates
 			unsigned char *str = cat(R[i], R[j], &n);
-			//printf("%s\t(%d)\n\n", str,n);
 
 			//build DA
-			
 			int_t *SA = new int_t[n];
 			int_t *DA = new int_t[n+1];
 			for(int_t p=0; p<n; p++) SA[p]=DA[p]=0;
@@ -899,7 +911,7 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file, int ou
 				cout<<endl;
 			#endif
 
-			Result(i,j) = compute_distance(t, s);
+			Result(i,j) = compute_distance(t, s, dist);
 
 			delete[] DA;
 			delete[] SA;
@@ -943,13 +955,13 @@ return 0;
 
 /******************************************************************************/
 
-int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file, int output, int check, int print){
+int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file, int dist, int output, int check, int print, int verbose){
 
 	int_t i;
 	
 	//Concatenate strings
 	/**/
-	unsigned char *str = cat_all(S, k, &n);
+	unsigned char *str = cat_all(S, k, &n, verbose);
 	
 	#if DEBUG
 		printf("R:\n");
@@ -958,7 +970,7 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	#endif
 	
 	#if OPT_VERSION 
-		cout<<"OPT_VERSION"<<endl;
+		if(verbose) cout<<"OPT_VERSION"<<endl;
 	#endif
 
 	#if WORST_CASE 
@@ -981,10 +993,8 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	int_vector<64> da(n);
 	//vector<uint64_t> da(n);
 	
-	#if TIME
-	  time_t t_start=0;clock_t c_start=0;
-		time_start(&t_start, &c_start); 
-	#endif
+	time_t t_start=0;clock_t c_start=0;
+	if(verbose) time_start(&t_start, &c_start); 
 	
 	//COMPUTE DA:
 	/**/
@@ -1029,10 +1039,10 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	size_t m = (k*k-k)/2.0;
 	double *Md = new double[m];
 	
-	#if TIME
+	if(verbose){
 		printf("#1. DA:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
-	#endif
+	}
 	
 	auto max_da = *std::max_element(da.begin(), da.end());
 
@@ -1097,11 +1107,10 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 //	vector<vector<tMII>> counts(max_da+1, vector<tMII>(max_da+1));
 //	vector<vector<int_t>> runs(max_da+1, vector<int_t>(max_da+1));  
 
-	
-	#if TIME
-	  printf("#2. RMQ:\n");
+	if(verbose){
+		printf("#2. RMQ:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
-	#endif
+	}
 	
 	for(size_t d=0; d < max_da; d++){
 	
@@ -1227,14 +1236,14 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 					++runs[j];
 				}
 			#endif
-			Result(d,j) = compute_distance(t[j], runs[j]);
+			Result(d,j) = compute_distance(t[j], runs[j], dist);
 		}
 	}
 	
-	#if TIME
+	if(verbose){
 		printf("#3. BWSD-RMQ:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
-	#endif
+	}
 	
 	if(output){
 		write_output(c_file, Md, m);
@@ -1266,13 +1275,13 @@ return 0;
 
 /******************************************************************************/
 
-int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file, int output, int check, int print){
+int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file, int dist, int output, int check, int print, int verbose){
 
 	int_t i;
 	
 	//Concatenate strings
 	/**/
-	unsigned char *str = cat_all(S, k, &n);
+	unsigned char *str = cat_all(S, k, &n, verbose);
 
 	#if WORST_CASE 
 		cout<<"WORST_CASE"<<endl;
@@ -1300,10 +1309,8 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	int_vector<64> da(n);
 	//vector<uint64_t> da(n);
 	
-	#if TIME
-	  time_t t_start=0;clock_t c_start=0;
-		time_start(&t_start, &c_start); 
-	#endif
+  time_t t_start=0;clock_t c_start=0;
+	if(verbose) time_start(&t_start, &c_start); 
 	
 	//COMPUTE DA:
 	/**/
@@ -1348,10 +1355,10 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	size_t m = (k*k-k)/2.0;
 	double *Md = new double[m];
 	
-	#if TIME
+	if(verbose){
 		printf("#1. DA:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
-	#endif
+	}
 	
 	auto max_da = *std::max_element(da.begin(), da.end());
 	
@@ -1413,10 +1420,10 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	vector<vector<tMII>> counts(max_da+1, vector<tMII>(max_da+1));
 	vector<vector<int_t>> runs(max_da+1, vector<int_t>(max_da+1));  
 	
-	#if TIME
-	  printf("#2. RMQ:\n");
+	if(verbose){
+		printf("#2. RMQ:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
-	#endif
+	}
 	
 	for(size_t i=1; i < da.size() + max_da; ++i){
 		size_t d  = i < da.size() ? da[i] : i-da.size();
@@ -1477,14 +1484,14 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	
 	for(size_t i=0; i<max_da; ++i){
 		for(size_t j=i+1; j<max_da; ++j) {
-			Result(i,j) = compute_distance(counts[i][j], runs[i][j]);
+			Result(i,j) = compute_distance(counts[i][j], runs[i][j], dist);
 		}
 	}
 	
-	#if TIME
+	if(verbose){
 		printf("#3. BWSD-RMQ:\n");
 		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
-	#endif
+	}
 	
 	if(output){
 		write_output(c_file, Md, m);
