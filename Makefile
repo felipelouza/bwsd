@@ -21,6 +21,7 @@ LIBOBJ = \
 ##
 
 M64 = 0
+OMP = 1
 DEBUG = 0
 
 #Alternatives for Algorithm 1
@@ -31,7 +32,7 @@ WT = 0
 
 LFLAGS = -lm -ldl
 
-DEFINES = -DDEBUG=$(DEBUG) -DM64=$(M64) -DWT=$(WT) -DSD_VECTOR=$(SD_VECTOR)
+DEFINES = -DDEBUG=$(DEBUG) -DM64=$(M64) -DOMP=$(OMP) -DWT=$(WT) -DSD_VECTOR=$(SD_VECTOR)
 
 CXX_FLAGS=$(MY_CXX_FLAGS) $(MY_CXX_OPT_FLAGS) -I$(INC_DIR) -L$(LIB_DIR) $(LFLAGS) $(DEFINES)
 

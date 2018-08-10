@@ -14,9 +14,10 @@
 #include <sdsl/bit_vectors.hpp>                                                                           
 #include <sdsl/rank_support.hpp>
 #include <sdsl/rmq_support.hpp>
-
 #include <iostream>
 #include <fstream>
+
+#include <omp.h>
 
 using namespace sdsl;
 using namespace std;  
@@ -32,6 +33,10 @@ using namespace std;
 #include "lib/file.h"
 #include "lib/bwt.h"
 #include "external/gsacak.h"
+
+#ifndef OMP
+	#define OMP 1
+#endif
 
 #ifndef DEBUG
 	#define DEBUG 0 
@@ -88,7 +93,7 @@ void usage(char *name){
   puts("\t-h    this help message");
   puts("\t-A a  preferred algorithm to use (default is alg. 1 BIT_sd)");
   puts("\t-B b  BWSD-based distance to compute, options: 1. expectation (default), 2. shannon entropy");
-//	puts("\t-p P  use P parallel threads(def 0)");
+	puts("\t-T t  use t parallel threads(def 0)");
   puts("\t-o    write output matrix to FILE.output.bin");
   puts("\t-p    print the output matrix (for debug)");
   puts("\t-v    verbose output\n");
@@ -97,9 +102,14 @@ void usage(char *name){
 
 /******************************************************************************/
 
+
 int main(int argc, char** argv){
 
-	time_t t_start=0;clock_t c_start=0;
+	#if OMP
+		double omp_start=0.0;
+	#else
+		time_t t_start=0;clock_t c_start=0;
+	#endif
 
 	extern char *optarg;
 	extern int optind;
@@ -110,8 +120,11 @@ int main(int argc, char** argv){
 	int MODE=1;//preferred algorithm
 	int k;
 	int output=0; //outputs the matrix to FILE.output.bin
-
-	while ((c=getopt(argc, argv, "vcpA:B:ho")) != -1) {
+	#if OMP
+		int n_threads=1;
+	#endif
+	
+	while ((c=getopt(argc, argv, "vcpA:B:T:ho")) != -1) {
 		switch (c) {
 			case 'v':
 				verbose++; break;
@@ -123,6 +136,10 @@ int main(int argc, char** argv){
 				MODE = (int) atoi(optarg); break;
 			case 'B':
 				dist = (int) atoi(optarg); break;
+			#if OMP
+			case 'T':
+				n_threads = (int) atoi(optarg); break;
+			#endif
 			case 'h':
 				usage(argv[0]); break;      // show usage and stop
 			case 'o':
@@ -165,8 +182,28 @@ int main(int argc, char** argv){
 		if(dist==1) printf("Expectation (default)\n");
 		else if (dist==2) printf("Shannon entropy\n");
 		printf("sizeof(int) = %zu bytes\n", sizeof(int_t));
+	}
+
+	#if OMP
+		omp_set_num_threads(n_threads);
+	
+		#pragma omp parallel
+		{
+		if(omp_get_thread_num()==0)
+			if(verbose) printf("N_THREADS: %d\n", omp_get_num_threads());
+		}
+		if(verbose) printf("N_PROCS: %d\n", omp_get_num_procs());
+	#endif
+	
+	if(verbose){
 		printf("########\n");
 	}
+
+	#if OMP
+		omp_start = omp_get_wtime();
+	#else 
+		time_start(&t_start, &c_start);
+	#endif
 
 	switch(MODE){
 
@@ -178,37 +215,33 @@ int main(int argc, char** argv){
 			#else
 				printf("## BWSD_BIT ##\n");
 			#endif
-			time_start(&t_start, &c_start);
 			compute_all_bwsd_rank(R, k, n, c_file, dist, output, check, print, verbose);
-			printf("TOTAL:\n");
-			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
 
 		case 2:	printf("## BWSD_RMQ_Nk ##\n"); //Algorithm 2, O(Nk) time
-			time_start(&t_start, &c_start);
 			compute_all_bwsd_rmq_Nk(R, k, n, c_file, dist, output, check, print, verbose);
-			printf("TOTAL:\n");
-			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
 
 		case 3:	printf("## BWSD_SF ##\n"); //Straightforward algorithm
-			time_start(&t_start, &c_start);
 			compute_all_bwsd(R, k, n, c_file, dist, output, check, print, verbose);
-			printf("TOTAL:\n");
-			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
 		
 		case 4:	printf("## BWSD_RMQ_Nz ##\n"); //Algorithm 2, O(N+z) time
-			time_start(&t_start, &c_start);
 			compute_all_bwsd_rmq_Nz(R, k, n, c_file, dist, output, check, print, verbose);
-			printf("TOTAL:\n");
-			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
 			break;
 
 
 		default: printf("ERROR: please, choose a valid -A options 1, 2, 3 and 4.\n");
 			break;
 	}
+	
+	printf("TOTAL:\n");
+	#if OMP
+		printf("TIME = %.6lf (in seconds)\n", omp_get_wtime()-omp_start);
+		fprintf(stderr, "%.6lf\n", omp_get_wtime()-omp_start);
+	#else
+		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
+	#endif
 
 return 0;
 }
@@ -420,8 +453,13 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 	cache_config m_config(true, dir, id);
 	int_vector<> da(n);
 
-  time_t t_start=0;clock_t c_start=0;
-	if(verbose) time_start(&t_start, &c_start); 
+	#if OMP
+		double omp_start=0.0;
+		if(verbose) omp_start = omp_get_wtime();
+	#else
+		time_t t_start=0;clock_t c_start=0;
+		if(verbose) time_start(&t_start, &c_start); 
+	#endif
 
 	//COMPUTE DA:
 	/**/
@@ -470,7 +508,12 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
  
 	if(verbose){
 		printf("#1. DA:\n");
-		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
+		#if OMP
+			printf("TIME = %.6lf (in seconds)\n", omp_get_wtime()-omp_start);
+			fprintf(stderr, "%.6lf\n", omp_get_wtime()-omp_start);
+		#else
+			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
+		#endif
 	}
 
 	#if WT
@@ -558,8 +601,14 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 		#endif
 	#endif
 
-	if(verbose)
-		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
+	if(verbose){
+		#if OMP
+			printf("TIME = %.6lf (in seconds)\n", omp_get_wtime()-omp_start);
+			fprintf(stderr, "%.6lf\n", omp_get_wtime()-omp_start);
+		#else
+			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
+		#endif
+	}
 
 	#if DEBUG	
 		cout<<"DA:"<<endl;
@@ -568,10 +617,10 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 	#endif
 
 
-	//avoid second wt.rank()
-	int_t *rank = new int_t[k+1];
 
 	#if OPT_VERSION 
+	
+		int_t *rank = new int_t[k+1];
 		//avoid wt.rank()-queries when next > qe
 		int_t **pos = new int_t*[k+1];
 		
@@ -593,12 +642,25 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 		for(int_t i=0; i<k; i++) pos[i][rank[i]]=n+1;
 
 		uint64_t skip=0, total=1;
+
+		delete[] rank;
 	#endif
 
-	int_t *s= new int_t[k];
-	int_t *ell = new int_t[k];
 
+	#if OMP
+		#if OPT_VERSION 
+				#pragma omp parallel for reduction(+:skip) reduction(+:total) 
+		#else
+				#pragma omp parallel for 
+		#endif
+	#endif
 	for(int_t i=0; i<k-1; i++){
+
+		int_t *s= new int_t[k];
+		int_t *ell = new int_t[k];
+	
+		//avoid second wt.rank()
+		int_t *rank = new int_t[k+1];
 
 		int_t qe=0;
 		#if WT
@@ -758,16 +820,21 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 			cout<<endl;
 		
 		#endif
+	
+		delete[] ell;
+		delete[] s;
+		delete[] rank;
 	}
 
 	if(verbose){
 		printf("#3. BWSD-RANK:\n");
-		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
+		#if OMP
+			printf("TIME = %.6lf (in seconds)\n", omp_get_wtime()-omp_start);
+			fprintf(stderr, "%.6lf\n", omp_get_wtime()-omp_start);
+		#else
+			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
+		#endif
 	}
-
-	delete[] ell;
-	delete[] s;
-	delete[] rank;
 
 	#if OPT_VERSION
 		for(int_t i=0; i<k; i++) delete[] pos[i];
@@ -993,8 +1060,13 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	int_vector<64> da(n);
 	//vector<uint64_t> da(n);
 	
-	time_t t_start=0;clock_t c_start=0;
-	if(verbose) time_start(&t_start, &c_start); 
+	#if OMP
+		double omp_start=0.0;
+		if(verbose) omp_start = omp_get_wtime();
+	#else
+		time_t t_start=0;clock_t c_start=0;
+		if(verbose) time_start(&t_start, &c_start); 
+	#endif
 	
 	//COMPUTE DA:
 	/**/
@@ -1041,7 +1113,12 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	
 	if(verbose){
 		printf("#1. DA:\n");
-		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
+		#if OMP
+			printf("TIME = %.6lf (in seconds)\n", omp_get_wtime()-omp_start);
+			fprintf(stderr, "%.6lf\n", omp_get_wtime()-omp_start);
+		#else
+			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
+		#endif
 	}
 	
 	auto max_da = *std::max_element(da.begin(), da.end());
@@ -1109,7 +1186,12 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 
 	if(verbose){
 		printf("#2. RMQ:\n");
-		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
+		#if OMP
+			printf("TIME = %.6lf (in seconds)\n", omp_get_wtime()-omp_start);
+			fprintf(stderr, "%.6lf\n", omp_get_wtime()-omp_start);
+		#else
+			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
+		#endif
 	}
 	
 	for(size_t d=0; d < max_da; d++){
@@ -1242,7 +1324,12 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	
 	if(verbose){
 		printf("#3. BWSD-RMQ:\n");
-		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
+		#if OMP
+			printf("TIME = %.6lf (in seconds)\n", omp_get_wtime()-omp_start);
+			fprintf(stderr, "%.6lf\n", omp_get_wtime()-omp_start);
+		#else
+			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
+		#endif
 	}
 	
 	if(output){
@@ -1309,8 +1396,13 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	int_vector<64> da(n);
 	//vector<uint64_t> da(n);
 	
-  time_t t_start=0;clock_t c_start=0;
-	if(verbose) time_start(&t_start, &c_start); 
+	#if OMP
+		double omp_start=0.0;
+		if(verbose) omp_start = omp_get_wtime();
+	#else
+		time_t t_start=0;clock_t c_start=0;
+		if(verbose) time_start(&t_start, &c_start); 
+	#endif
 	
 	//COMPUTE DA:
 	/**/
@@ -1357,7 +1449,12 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	
 	if(verbose){
 		printf("#1. DA:\n");
-		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
+		#if OMP
+			printf("TIME = %.6lf (in seconds)\n", omp_get_wtime()-omp_start);
+			fprintf(stderr, "%.6lf\n", omp_get_wtime()-omp_start);
+		#else
+			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
+		#endif
 	}
 	
 	auto max_da = *std::max_element(da.begin(), da.end());
@@ -1422,7 +1519,12 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	
 	if(verbose){
 		printf("#2. RMQ:\n");
-		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
+		#if OMP
+			printf("TIME = %.6lf (in seconds)\n", omp_get_wtime()-omp_start);
+			fprintf(stderr, "%.6lf\n", omp_get_wtime()-omp_start);
+		#else
+			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
+		#endif
 	}
 	
 	for(size_t i=1; i < da.size() + max_da; ++i){
@@ -1490,7 +1592,12 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	
 	if(verbose){
 		printf("#3. BWSD-RMQ:\n");
-		fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start)); 
+		#if OMP
+			printf("TIME = %.6lf (in seconds)\n", omp_get_wtime()-omp_start);
+			fprintf(stderr, "%.6lf\n", omp_get_wtime()-omp_start);
+		#else
+			fprintf(stderr,"%.6lf\n", time_stop(t_start, c_start));
+		#endif
 	}
 	
 	if(output){

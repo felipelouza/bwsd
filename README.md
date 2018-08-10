@@ -1,10 +1,10 @@
-# bwsd tool: 
+# bwsd: 
 
 This software is an implementation of the algorithms described in \[[1](https://github.com/felipelouza/bwsd#references)\] to compute all-pairs of **Burrows-Wheeler similarity distributions (BWSD)** for a string collection.
 
 Given a collection of _d_ strings, _bwsd_ computes a matrix M<sub>dxd</sub> with all pairs of BWSD-based distances.
 
-The Burrows-Wheeler transform (BWT) and the Document array (DA) were computed using [gsaca-k](https://github.com/felipelouza/gsa-is/).
+The Burrows-Wheeler transform (BWT) and the Document array (DA) are computed using [gsaca-k](https://github.com/felipelouza/gsa-is/) \[2\].
 
 ## install
 
@@ -36,8 +36,6 @@ Available options:
 ```
 _Notes:_ 
 - Supported extensions are _.txt_, _.fasta_ and _.fastq_.
-- We compute only the (d<sup>2</sup>-d)/2 entries of M<sub>dxd</sub> (upper triangular matrix), which can be accessed as in [here](https://github.com/felipelouza/bwsd/blob/master/main.cpp#L312)
-
 
 ## quick test
 
@@ -73,6 +71,10 @@ writing 360 bytes to: input.100.txt.output.bin
 1.30	1.30	1.30	1.75	1.69	1.46	1.39	1.51	2.00	0.00	
 ```
 
+_Notes:_ 
+- We compute only the (d<sup>2</sup>-d)/2 entries of M<sub>dxd</sub> (upper triangular matrix), which can be accessed as in [here](https://github.com/felipelouza/bwsd/blob/master/main.cpp#L312)
+
+
 ## alternatives (Alg. 1)
 
 Using uncompressed bitvectors (bit\_vector):
@@ -99,10 +101,31 @@ To see a more detailed execution use:
 make clean
 make DEBUG=1
 ```
+## citation
+
+Please, if you use this tool in an academic setting cite the following paper \[1\]:
+
+    @inproceedings{LouzaTGZ18,
+      author    = {Louza, Felipe A. and Telles, Guilherme P. and Gog, Simon and Zhao, Liang},
+      title     = {Computing Burrows-Wheeler Similarity Distributions for String Collections},
+      booktitle = {String Processing and Information Retrieval - 25th International Symposium,
+                  {SPIRE} 2018, Proceedings},
+      pages     = {1--12},
+      year      = {2018},
+      series    = {Lecture Notes in Computer Science},
+      volume    = {},
+      publisher = {Springer}
+    }
 
 ## references
 
 \[1\] 
-Felipe A. Louza, Guilherme P. Telles, Simon Gog, Liang Zhao: 
-Computing Burrows-Wheeler Similarity Distributions for String Collections. To appear in Proc. SPIRE 2018: 1-12 
+Louza, Felipe A., Telles, Guilherme P., Gog, Simon, Liang Zhao (2018): 
+Computing Burrows-Wheeler Similarity Distributions for String Collections. 
+To appear in Proc. SPIRE 2018: 1-12.
+
+\[2\] 
+Louza, Felipe A., Gog, Simon, Telles, Guilherme P. (2017). 
+Inducing enhanced suffix arrays for string collections. 
+Theor. Comput. Sci. 678: 22-39, [github](https://github.com/felipelouza/gsa-is).
 
