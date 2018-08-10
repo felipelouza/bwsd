@@ -29,7 +29,8 @@ Available options:
 ```sh
 -h    this help message
 -A a  preferred algorithm to use (default is alg. 1 BIT_sd)
--B b  BWSD-based distance to compute, options: 1. expectation (default), 2. shannon entropy
+-B b  BWSD-based distance to compute, options: 1. expectation (default), 2. Shannon entropy
+-T t  use t parallel threads (default 1)
 -o    write output matrix to FILE.output.bin
 -p    print the output matrix (for debug)
 -v    verbose output

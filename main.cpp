@@ -56,7 +56,7 @@ using namespace std;
 
 //debug purposes
 #ifndef WORST_CASE 
-  #define WORST_CASE 0
+  #define WORST_CASE 1
 #endif
 
 //#define Result(i,j) (result[i][j])
@@ -92,8 +92,8 @@ void usage(char *name){
   puts("Available options:");
   puts("\t-h    this help message");
   puts("\t-A a  preferred algorithm to use (default is alg. 1 BIT_sd)");
-  puts("\t-B b  BWSD-based distance to compute, options: 1. expectation (default), 2. shannon entropy");
-	puts("\t-T t  use t parallel threads(def 0)");
+  puts("\t-B b  BWSD-based distance to compute, options: 1. expectation (default), 2. Shannon entropy");
+	puts("\t-T t  use t parallel threads (default 1)");
   puts("\t-o    write output matrix to FILE.output.bin");
   puts("\t-p    print the output matrix (for debug)");
   puts("\t-v    verbose output\n");
@@ -222,7 +222,7 @@ int main(int argc, char** argv){
 			compute_all_bwsd_rmq_Nk(R, k, n, c_file, dist, output, check, print, verbose);
 			break;
 
-		case 3:	printf("## BWSD_SF ##\n"); //Straightforward algorithm
+		case 3:	printf("## BWSD_SF ##\n"); //Straightforward algorithm, O(Nk) time
 			compute_all_bwsd(R, k, n, c_file, dist, output, check, print, verbose);
 			break;
 		
@@ -528,10 +528,15 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 	#if WT
 		//COMPUTE WT(DA):
 		wm_int<> wt;
-		if(!load_from_cache(wt, "wt", m_config)){
+		#if WORST_CASE
 			construct_im(wt, da);
 			store_to_cache(wt, "wt", m_config);
-		}
+		#else
+			if(!load_from_cache(wt, "wt", m_config)){
+				construct_im(wt, da);
+				store_to_cache(wt, "wt", m_config);
+			}
+		#endif
 	#else
 
 		#if SD_VECTOR
@@ -718,7 +723,9 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 		for(uint64_t p=1; p<len_i+1; p++){
 
 			#if DEBUG == 2
-				cout << "[" <<qe <<", "<< wt.select(p, i) << "]   \t0^1"<<endl;
+				#if WT
+					cout << "[" <<qe <<", "<< wt.select(p, i) << "]   \t0^1"<<endl;
+				#endif
 			#endif
 		
 			#if OPT_VERSION
@@ -776,7 +783,7 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 		//last iteration
 		{
 			#if DEBUG == 2
-				cout << "[" <<qs <<", "<<n<< "]"<<endl;
+				cout << "[.." <<", "<<n<< "]"<<endl;
 			#endif
 			for(int_t j=i+1; j<k; j++){
 
@@ -945,6 +952,9 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file, int di
 	double *Md = new double[m];
 
 	/**/
+	#if OMP
+		#pragma omp parallel for 
+	#endif
 	for(int_t i=0; i<k-1; i++){
 
 		#if DEBUG 
@@ -953,11 +963,15 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file, int di
 
 
 		//foreach S^j in j+1..k
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(int_t j=i+1; j<k; j++){
 	
 			tMII t;
 
-			int_t s= 0;
+			int_t s=0;
+			uint_t n=0;
 			//concatenates
 			unsigned char *str = cat(R[i], R[j], &n);
 
@@ -1032,6 +1046,9 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file, int di
 	}
 
 	//free memory
+	#if OMP
+		#pragma omp parallel for 
+	#endif
 	for(int_t i=0; i<k; i++)
 		free(R[i]);
 	free(R);
@@ -1051,6 +1068,9 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file, int di
 	//checksum: for the sake of sanity
 	if(check){
 		double sum=0.0;
+		#if OMP
+			#pragma omp parallel for reduction(+:sum) 
+		#endif
 		for(int_t i=0; i<k; i++)
 			for(int_t j=i+1; j<k; j++)
 				sum+=Result(i,j);
@@ -1087,6 +1107,9 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	#endif
 
 	//free memory
+	#if OMP
+		#pragma omp parallel for 
+	#endif
 	for(i=0; i<k; i++)
 		free(S[i]);
 	free(S);
@@ -1117,9 +1140,15 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 		int_t *SA = new int_t[n];
 		int_t *DA = new int_t[n];
 		
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(i=0; i<n; i++) SA[i]=DA[i]=0;
 		gsacak(str, (uint_t*)SA, NULL, DA, (uint_t)n); //construct SA+DA
 	
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(i=0;i<n;i++) da[i]=DA[i];
 		store_to_cache(da, "da_rmq", m_config);
 	
@@ -1216,12 +1245,8 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	rmq_succinct_sct<true>  rmq_P(&P);
 	rmq_succinct_sct<false> RMQ_N(&N);
 	
-	vector<size_t> seen(max_da+1,0); 
-	stack<size_t>  seen_stack;
-	vector<size_t> freq(max_da+1,0); 
-	vector<size_t> last_occ(max_da+1, 0);
+	//vector<size_t> seen(max_da+1,0); 
 	
-	int_t *ell = new int_t[max_da+1];
 
 //	vector<vector<tMII>> counts(max_da+1, vector<tMII>(max_da+1));
 //	vector<vector<int_t>> runs(max_da+1, vector<int_t>(max_da+1));  
@@ -1236,8 +1261,16 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 		#endif
 	}
 	
+	#if OMP
+		#pragma omp parallel for 
+	#endif
 	for(size_t d=0; d < max_da; d++){
 	
+		int_t *ell = new int_t[max_da+1];
+		stack<size_t>  seen_stack;
+		vector<size_t> freq(max_da+1,0); 
+		vector<size_t> last_occ(max_da+1, 0);
+
 		//init
 		tVMII t(max_da+1);
 		vector<int_t> runs(max_da+1);  
@@ -1248,6 +1281,9 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 		#endif
 
 		#if OPT_VERSION
+			#if OMP
+				#pragma omp parallel for 
+			#endif
 			for(int_t j=d+1; j<k; j++) ell[j]=0;
 		#endif
 
@@ -1329,7 +1365,11 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 					for(int_t j=d+1; j<k; j++) ell[j]++;//considers that S_j does not occur in [lb, rb]
 			#endif
 		}
+
 		//count runs for S_d
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(size_t j=d+1; j<max_da; j++){
 
 			#if OPT_VERSION
@@ -1362,6 +1402,8 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 			#endif
 			Result(d,j) = compute_distance(t[j], runs[j], dist);
 		}
+
+		delete[] ell;
 	}
 	
 	if(verbose){
@@ -1389,6 +1431,9 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	//checksum: for the sake of sanity
 	if(check){
 		double sum=0.0;
+		#if OMP
+			#pragma omp parallel for reduction(+:sum) 
+		#endif
 		for(int_t i=0; i<k; i++)
 			for(int_t j=i+1; j<k; j++)
 				sum+=Result(i,j);
@@ -1397,7 +1442,6 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	}
     
 	delete[] Md;
-	delete[] ell;
 
 return 0;
 }
@@ -1423,6 +1467,9 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	#endif
 	
 	//free memory
+	#if OMP
+		#pragma omp parallel for 
+	#endif
 	for(i=0; i<k; i++)
 		free(S[i]);
 	free(S);
@@ -1453,9 +1500,15 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 		int_t *SA = new int_t[n];
 		int_t *DA = new int_t[n];
 		
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(i=0; i<n; i++) SA[i]=DA[i]=0;
 		gsacak(str, (uint_t*)SA, NULL, DA, (uint_t)n); //construct SA+DA
 	
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(i=0;i<n;i++) da[i]=DA[i];
 		store_to_cache(da, "da_rmq", m_config);
 	
@@ -1514,7 +1567,7 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	#endif  
 	
 	int_vector<64> P(da.size(), da.size());
-	int_vector<64> N(da.size(), 0);
+	int_vector<64> N(da.size()+1, 0);
 	int_vector<64> R(da.size(), 0);
 	
 	{
@@ -1533,6 +1586,7 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 			N[i-1] = next_occ[da[i-1]];
 			next_occ[da[i-1]] = i-1;
 		}
+		N[da.size()]=da.size()+max_da;
 	}
 	#if DEBUG
 		print_array(N, "N  ");
@@ -1551,10 +1605,7 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	rmq_succinct_sct<true>  rmq_P(&P);
 	rmq_succinct_sct<false> RMQ_N(&N);
 	
-	vector<size_t> seen(max_da+1,0); 
-	stack<size_t>  seen_stack;
-	vector<size_t> freq(max_da+1,0); 
-	vector<size_t> last_occ(max_da+1, 0);
+	//vector<size_t> seen(max_da+1,0); 
 	
 	vector<vector<tMII>> counts(max_da+1, vector<tMII>(max_da+1));
 	vector<vector<int_t>> runs(max_da+1, vector<int_t>(max_da+1));  
@@ -1569,68 +1620,95 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 		#endif
 	}
 	
-	for(size_t i=1; i < da.size() + max_da; ++i){
-		size_t d  = i < da.size() ? da[i] : i-da.size();
-		size_t lb = last_occ[d];
-		size_t rb = i < da.size() ? i-1 : da.size()-1;
-		last_occ[d] = i+1;
-		
-		#if DEBUG
-		  cout << "i="<<setw(2)<<i<<" d="<<setw(2)<<d<<" ["<<lb<<","<<rb<<"] ";
+//replaced by the two following forloops
+//for(size_t i=1; i < da.size() + max_da; ++i){
+
+	#if OMP
+		#pragma omp parallel for 
+	#endif
+	for(size_t d=0; d < max_da; d++){
+	
+		stack<size_t>  seen_stack;
+		vector<size_t> freq(max_da+1,0); 
+		vector<size_t> last_occ(max_da+1, 0);
+
+		size_t p=d+1;
+		#if WORST_CASE
+			p = d*(n/k)+1;
 		#endif
-		
-		stack<tAII> ranges;
-		push_if_not_empty(ranges, {lb,rb});
-		while ( !ranges.empty() ) {
-			size_t _lb = ranges.top()[0];
-			size_t _rb = ranges.top()[1];
-			ranges.pop();
-			size_t _m = rmq_P(_lb, _rb);
-			if ( P[_m] < lb+1 ) { // equiv P[_m]-1 < lb 
-				seen_stack.push(da[_m]);
-				freq[da[_m]] = R[_m];
-				push_if_not_empty(ranges, {_lb, _m-1});
-				push_if_not_empty(ranges, {_m+1, _rb});
-			}
-		}
-		#if DEBUG
-		  cout << " unique docs: " << seen_stack.size() << " ";
-		#endif
-		
-		push_if_not_empty(ranges, {lb,rb});
-		while ( !ranges.empty() ) {
-			size_t _lb = ranges.top()[0];
-			size_t _rb = ranges.top()[1];
-			ranges.pop();
-			size_t _m = RMQ_N(_lb, _rb);
-			if ( N[_m] > rb ) {
-				freq[da[_m]] = R[_m] - freq[da[_m]] + 1;
-				push_if_not_empty(ranges, {_m+1, _rb});
-				push_if_not_empty(ranges, {_lb, _m-1});
-			}
-		}
-		
-		while( !seen_stack.empty() ) {
-			auto x = seen_stack.top();
-			seen_stack.pop();
+
+		for(; p < da.size()+max_da; p=N[p]){
+
+			i=p;
+//		size_t d  = i < da.size() ? da[i] : i-da.size();
+			size_t lb = last_occ[d];
+			size_t rb = i < da.size() ? i-1 : da.size()-1;
+			last_occ[d] = i+1;
+			
 			#if DEBUG
-			  cout << " (d="<<x<<", f="<<freq[x]<<")";
+				cout << "i="<<setw(2)<<i<<" d="<<setw(2)<<d<<" ["<<lb<<","<<rb<<"] ";
 			#endif
-			auto i1 = std::min(d,x);
-			auto i2 = std::max(d,x);
-			++counts[i1][i2][freq[x]];
-			++runs[i1][i2];
+			
+			stack<tAII> ranges;
+			push_if_not_empty(ranges, {lb,rb});
+			while ( !ranges.empty() ) {
+				size_t _lb = ranges.top()[0];
+				size_t _rb = ranges.top()[1];
+				ranges.pop();
+				size_t _m = rmq_P(_lb, _rb);
+				if ( P[_m] < lb+1 ) { // equiv P[_m]-1 < lb 
+					seen_stack.push(da[_m]);
+					freq[da[_m]] = R[_m];
+					push_if_not_empty(ranges, {_lb, _m-1});
+					push_if_not_empty(ranges, {_m+1, _rb});
+				}
+			}
+			#if DEBUG
+				cout << " unique docs: " << seen_stack.size() << " ";
+			#endif
+			
+			push_if_not_empty(ranges, {lb,rb});
+			while ( !ranges.empty() ) {
+				size_t _lb = ranges.top()[0];
+				size_t _rb = ranges.top()[1];
+				ranges.pop();
+				size_t _m = RMQ_N(_lb, _rb);
+				if ( N[_m] > rb ) {
+					freq[da[_m]] = R[_m] - freq[da[_m]] + 1;
+					push_if_not_empty(ranges, {_m+1, _rb});
+					push_if_not_empty(ranges, {_lb, _m-1});
+				}
+			}
+			
+			while( !seen_stack.empty() ) {
+				auto x = seen_stack.top();
+				seen_stack.pop();
+				#if DEBUG
+					cout << " (d="<<x<<", f="<<freq[x]<<")";
+				#endif
+				auto i1 = std::min(d,x);
+				auto i2 = std::max(d,x);
+				++counts[i1][i2][freq[x]];
+				++runs[i1][i2];
+			}
+			#if DEBUG
+				cout << endl;
+			#endif
 		}
-		#if DEBUG
-		  cout << endl;
-		#endif
 	}
 	
+	#if OMP
+		#pragma omp parallel for 
+	#endif
 	for(size_t i=0; i<max_da; ++i){
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(size_t j=i+1; j<max_da; ++j) {
 			Result(i,j) = compute_distance(counts[i][j], runs[i][j], dist);
 		}
 	}
+
 	
 	if(verbose){
 		printf("#3. BWSD-RMQ:\n");
@@ -1657,6 +1735,9 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	//checksum: for the sake of sanity
 	if(check){
 		double sum=0.0;
+		#if OMP
+			#pragma omp parallel for reduction(+:sum) 
+		#endif
 		for(int_t i=0; i<k; i++)
 			for(int_t j=i+1; j<k; j++)
 				sum+=Result(i,j);
