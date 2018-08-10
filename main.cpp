@@ -439,6 +439,9 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 	#endif
 
 	//free memory
+	#if OMP
+		#pragma omp parallel for 
+	#endif
 	for(i=0; i<k; i++)
 		free(R[i]);
 	free(R);
@@ -468,9 +471,15 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 		int_t *SA = new int_t[n];
 		int_t *DA = new int_t[n];
 		
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(i=0; i<n; i++) SA[i]=DA[i]=0;
 		gsacak(str, (uint_t*)SA, NULL, DA, (uint_t)n); //construct SA+DA
 	
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(i=0;i<n;i++) da[i]=DA[i];
 		store_to_cache(da, "da", m_config);
 
@@ -529,15 +538,24 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 			sd_vector_builder *B = new sd_vector_builder[k+1];
 		
 			int_t *size = new int_t[k+1];
+			#if OMP
+				#pragma omp parallel for 
+			#endif
 			for(int_t i=0; i<k; i++) size[i]=0;
 			for(int_t i=1; i<n; i++) size[da[i]]++;
 
+			#if OMP
+				#pragma omp parallel for 
+			#endif
 			for(int_t i=0; i<k; i++)
 				B[i] = sd_vector_builder(n,size[i]);
 
 			delete[] size;
 		#else
 			bit_vector *B = new bit_vector[k];
+			#if OMP
+				#pragma omp parallel for 
+			#endif
 			for(int_t i=0; i<k; i++)
 				B[i] = bit_vector(n,0);
 		#endif
@@ -551,6 +569,9 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 
 		#if SD_VECTOR
 			sd_vector<> *B_sd = new sd_vector<>[k];
+			#if OMP
+				#pragma omp parallel for 
+			#endif
 			for(int_t i=0; i<k; i++)
 				B_sd[i] = sd_vector<>(B[i]);
 			delete[] B;
@@ -563,6 +584,9 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 			rank_support_v<1> *B_rank = new rank_support_v<1>[k];
 		#endif
 
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(int_t i=0; i<k; i++){
 			#if SD_VECTOR
 				B_rank[i] = rank_support_sd<1>(&B_sd[i]);
@@ -578,6 +602,9 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 				select_support_sd<1> *B_select= new select_support_sd<1>[k];	
 			#else
 				select_support_mcl<1,1> *B_select= new select_support_mcl<1,1>[k];
+			#endif
+			#if OMP
+				#pragma omp parallel for 
 			#endif
 			for(int_t i=0; i<k; i++){
 				#if SD_VECTOR
@@ -624,6 +651,9 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 		//avoid wt.rank()-queries when next > qe
 		int_t **pos = new int_t*[k+1];
 		
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(int_t i=0; i<k; i++){
 			rank[i]=0;
 			#if WT
@@ -639,6 +669,9 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 			rank[da[i]]++;
 		}
 		
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(int_t i=0; i<k; i++) pos[i][rank[i]]=n+1;
 
 		uint64_t skip=0, total=1;
@@ -676,6 +709,9 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 			cout<<"i = "<<i<<", "<<len_i<<endl;
 		#endif
 
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(int_t j=i+1; j<k; j++) s[j] = rank[j] = ell[j]=0;
 	
 		//forloop S^i[1..n_i]
@@ -837,6 +873,9 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 	}
 
 	#if OPT_VERSION
+		#if OMP
+			#pragma omp parallel for 
+		#endif
 		for(int_t i=0; i<k; i++) delete[] pos[i];
 		delete[] pos;
 	#endif
@@ -868,6 +907,9 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 	//checksum: for the sake of sanity
 	if(check){
 		double sum=0.0;
+		#if OMP
+			#pragma omp parallel for reduction(+:sum) 
+		#endif
 		for(int_t i=0; i<k; i++)
 			for(int_t j=i+1; j<k; j++)
 				sum+=Result(i,j);
