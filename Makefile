@@ -69,7 +69,7 @@ lib: lib/file.c lib/utils.c external/gsacak.c external/malloc_count/malloc_count
 
 
 compile: lib main.cpp ${LIBOBJ} 
-	$(MY_CXX) $(CXX_FLAGS) main.cpp $(CCLIB) -o bwsd ${LIBOBJ} 
+	$(MY_CXX) main.cpp $(CCLIB) -o bwsd ${LIBOBJ} $(CXX_FLAGS) 
 
 run:
 	./bwsd $(DIR)$(INPUT) $(K) -M $(MODE)

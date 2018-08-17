@@ -164,7 +164,7 @@ int main(int argc, char** argv){
 	file_chdir(c_dir);
 
 	//disk access
-	R = (unsigned char**) file_load_multiple(c_file, k, &n);
+	R = (unsigned char**) file_load_multiple(c_file, &k, &n);
 	if(!R){
 		fprintf(stderr, "Error: less than %d strings in %s\n", k, c_file);
 		return 0;
@@ -316,10 +316,12 @@ double bwsd_expectation(tMII &t, int_t s){
 	double value = 0.0;
 	
 	for(tMII::iterator it=t.begin(); it!=t.end(); ++it){
-		if(it->second) value++;
+		if(it->second){
+			value += (double)it->first*(double)it->second/(double)s;
+		}
 	}
 
-	value = 1.0/value-1.0;
+	value = value-1.0;
 
 return value;
 }
@@ -368,13 +370,15 @@ void push_if_not_empty(stack<tAII>& s, tAII range){
 
 int	print_output(double *Md, uint_t k){
 
+	double zero=0.0;
+
 	for(int_t i=0; i<k; i++){
 		for(int_t j=0; j<i; j++){
-			printf("%.2lf\t", Result(j,i));
+			printf("%.3lf\t", Result(j,i));
 		}
-		printf("0.00\t");
+		printf("%.3lf\t", zero);
 		for(int_t j=i+1; j<k; j++){
-			printf("%.2lf\t", Result(i,j));
+			printf("%.3lf\t", Result(i,j));
 		}
 		cout<<endl;
 	}

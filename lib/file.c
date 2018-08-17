@@ -108,12 +108,12 @@ return c_buffer;
 /*******************************************************************/
 
 // read line by line
-char** load_multiple_txt(FILE* f_in, int k, int_t *n) {
+char** load_multiple_txt(FILE* f_in, int *k, int_t *n) {
 
-	char **c_buffer = (char**) malloc(k*sizeof(char*));
+	char **c_buffer = (char**) malloc((*k)*sizeof(char*));
 
 	int i;
- 	for(i=0; i<k; i++){
+ 	for(i=0; i<*k; i++){
 
 		size_t len = 0; c_buffer[i] = NULL;		
 		ssize_t size = getline(&c_buffer[i], &len, f_in);
@@ -131,14 +131,14 @@ return c_buffer;
 }
 
 // read sequences separeted by '@' line
-char** load_multiple_fastq(FILE* f_in, int k, int_t *n){
+char** load_multiple_fastq(FILE* f_in, int *k, int_t *n){
 
-	char **c_buffer = (char**) malloc(k*sizeof(char*));
+	char **c_buffer = (char**) malloc((*k)*sizeof(char*));
 
   size_t len = 0;
 	char *buf = NULL;
 	int i;
- 	for(i=0; i<k; i++){
+ 	for(i=0; i<*k; i++){
 
 		len = 0; buf = NULL;
 		ssize_t size = getline(&buf, &len, f_in); // @'s line
@@ -164,9 +164,9 @@ return c_buffer;
 }
 
 // read sequences separeted by '>' line
-char** load_multiple_fasta(FILE* f_in, int k, int_t *n){
+char** load_multiple_fasta(FILE* f_in, int *k, int_t *n){
 
-	char **c_buffer = (char**) malloc(k*sizeof(char*));
+	char **c_buffer = (char**) malloc((*k)*sizeof(char*));
 
 	char *buf = NULL;
 	size_t len = 0;
@@ -176,7 +176,7 @@ char** load_multiple_fasta(FILE* f_in, int k, int_t *n){
 
 	int count=0;
 	int i;
- 	for(i=0; i<k; i++){
+ 	for(i=0; i<*k; i++){
 
 		if(i!=count) return 0;
 
@@ -214,7 +214,7 @@ return c_buffer;
 
 /*******************************************************************/
 
-char** file_load_multiple(char* c_file, int k, int_t *n) {
+char** file_load_multiple(char* c_file, int *k, int_t *n) {
 
 /* .ext
  * .txt   - strings per line
@@ -227,6 +227,8 @@ char** file_load_multiple(char* c_file, int k, int_t *n) {
 
 	const char *type = get_filename_ext(c_file);
 	char **c_buffer = NULL; // = (char**) malloc(k*sizeof(char*));
+
+	if(*k==0) *k=INT_MAX;
 
 	if(strcmp(type,"txt") == 0)
 		c_buffer = load_multiple_txt(f_in, k, n);

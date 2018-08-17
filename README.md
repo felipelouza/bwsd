@@ -37,6 +37,7 @@ Available options:
 ```
 _Notes:_ 
 - Supported extensions are _.txt_, _.fasta_ and _.fastq_.
+- If the input is changed, please run `make remove DIR=dataset/`, to rebuild the BWTs.
 
 ## quick test
 
@@ -60,20 +61,20 @@ Result:
 ```sh
 ## BWSD_BIT_sd ##
 writing 360 bytes to: input.100.txt.output.bin
-0.00	0.00	0.68	1.46	2.16	2.13	1.75	2.16	1.90	1.30	
-0.00	0.00	0.68	1.46	2.16	2.13	1.75	2.16	1.90	1.30	
-0.68	0.68	0.00	1.61	1.81	1.22	1.75	1.75	1.61	1.30	
-1.46	1.46	1.61	0.00	2.25	2.06	2.16	2.16	0.96	1.75	
-2.16	2.16	1.81	2.25	0.00	2.32	0.94	2.02	2.52	1.69	
-2.13	2.13	1.22	2.06	2.32	0.00	1.79	2.25	1.96	1.46	
-1.75	1.75	1.75	2.16	0.94	1.79	0.00	1.63	2.52	1.39	
-2.16	2.16	1.75	2.16	2.02	2.25	1.63	0.00	1.75	1.51	
-1.90	1.90	1.61	0.96	2.52	1.96	2.52	1.75	0.00	2.00	
-1.30	1.30	1.30	1.75	1.69	1.46	1.39	1.51	2.00	0.00	
+0.000	0.000	0.684	1.459	2.156	2.128	1.750	2.156	1.896	1.299
+0.000	0.000	0.684	1.459	2.156	2.128	1.750	2.156	1.896	1.299
+0.684	0.684	0.000	1.614	1.811	1.224	1.750	1.750	1.614	1.299
+1.459	1.459	1.614	0.000	2.250	2.059	2.156	2.156	0.959	1.750
+2.156	2.156	1.811	2.250	0.000	2.322	0.944	2.020	2.522	1.686
+2.128	2.128	1.224	2.059	2.322	0.000	1.792	2.252	1.961	1.459
+1.750	1.750	1.750	2.156	0.944	1.792	0.000	1.627	2.522	1.392
+2.156	2.156	1.750	2.156	2.020	2.252	1.627	0.000	1.753	1.506
+1.896	1.896	1.614	0.959	2.522	1.961	2.522	1.753	0.000	2.000
+1.299	1.299	1.299	1.750	1.686	1.459	1.392	1.506	2.000	0.000
 ```
 
 _Notes:_ 
-- We compute only the (d<sup>2</sup>-d)/2 entries of M<sub>dxd</sub> (upper triangular matrix), which can be accessed as in [here](https://github.com/felipelouza/bwsd/blob/master/main.cpp#L312)
+- We compute only the (d<sup>2</sup>-d)/2 entries of M<sub>dxd</sub> (upper triangular matrix), which can be accessed as [here](https://github.com/felipelouza/bwsd/blob/master/main.cpp#L312)
 
 
 ## alternatives (Alg. 1)
