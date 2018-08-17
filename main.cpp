@@ -88,7 +88,7 @@ void usage(char *name){
   printf("\n\tUsage: %s [options] FILE d\n\n",name);
   puts("Computes BWSD-based distances for the first d sequences of a collection.");
 //  puts("Sequences from FILE are extracted according to FILE's");
-  puts("Extension; currently supported extensions are: .txt .fasta .fastq\n");
+  puts("Extensions currently supported extensions: .txt .fasta .fastq\n");
   puts("Available options:");
   puts("\t-h    this help message");
   puts("\t-A a  preferred algorithm to use (default is alg. 1 BIT_sd)");
@@ -118,7 +118,7 @@ int main(int argc, char** argv){
 
 	int verbose=0, check=0, print=0, dist=1;
 	int MODE=1;//preferred algorithm
-	int k;
+	int k=0;
 	int output=0; //outputs the matrix to FILE.output.bin
 	#if OMP
 		int n_threads=1;

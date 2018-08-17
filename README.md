@@ -36,6 +36,7 @@ Available options:
 -v    verbose output
 ```
 _Notes:_ 
+- d=0 gives all strings as input.
 - Supported extensions are _.txt_, _.fasta_ and _.fastq_.
 - If the input is changed, please run `make remove DIR=dataset/`, to rebuild the BWTs.
 

@@ -1,5 +1,7 @@
 #include "file.h"
 
+#define N_ALLOC 1024
+
 /* Returns the file extension
  */
 const char *get_filename_ext(const char *filename) {                                                  
@@ -110,7 +112,8 @@ return c_buffer;
 // read line by line
 char** load_multiple_txt(FILE* f_in, int *k, int_t *n) {
 
-	char **c_buffer = (char**) malloc((*k)*sizeof(char*));
+  int n_alloc = N_ALLOC;
+	char **c_buffer = (char**) malloc(n_alloc*sizeof(char*));
 
 	int i;
  	for(i=0; i<*k; i++){
@@ -118,14 +121,18 @@ char** load_multiple_txt(FILE* f_in, int *k, int_t *n) {
 		size_t len = 0; c_buffer[i] = NULL;		
 		ssize_t size = getline(&c_buffer[i], &len, f_in);
 		if (size == -1){
-			printf("K = %d\n", i);
-			return 0;
+			*k = i;
+			break;		
 		}
 		c_buffer[i][size-1] = 0;
 
 		(*n) += size;
-	}
 
+		if(i==n_alloc-1){
+			n_alloc+=N_ALLOC;
+      c_buffer = (char**) realloc(c_buffer, n_alloc*sizeof(char*));
+		}
+	}
 
 return c_buffer;
 }
@@ -133,7 +140,8 @@ return c_buffer;
 // read sequences separeted by '@' line
 char** load_multiple_fastq(FILE* f_in, int *k, int_t *n){
 
-	char **c_buffer = (char**) malloc((*k)*sizeof(char*));
+  int n_alloc = N_ALLOC;
+	char **c_buffer = (char**) malloc(n_alloc*sizeof(char*));
 
   size_t len = 0;
 	char *buf = NULL;
@@ -143,8 +151,10 @@ char** load_multiple_fastq(FILE* f_in, int *k, int_t *n){
 		len = 0; buf = NULL;
 		ssize_t size = getline(&buf, &len, f_in); // @'s line
 		free(buf);
-    if (size <= 1)
-    return 0;
+    if (size <= 1){
+			*k = i;
+			break;		
+		}
 
 		len = 0; c_buffer[i] = NULL;
 		size = getline(&c_buffer[i], &len, f_in); // read line
@@ -158,6 +168,11 @@ char** load_multiple_fastq(FILE* f_in, int *k, int_t *n){
 		len = 0; buf = NULL;
 		getline(&buf, &len, f_in); // @'s line
 		free(buf);
+
+		if(i==n_alloc-1){
+			n_alloc+=N_ALLOC;
+      c_buffer = (char**) realloc(c_buffer, n_alloc*sizeof(char*));
+		}
 	}
 
 return c_buffer;
@@ -166,7 +181,8 @@ return c_buffer;
 // read sequences separeted by '>' line
 char** load_multiple_fasta(FILE* f_in, int *k, int_t *n){
 
-	char **c_buffer = (char**) malloc((*k)*sizeof(char*));
+  int n_alloc = N_ALLOC;
+	char **c_buffer = (char**) malloc(n_alloc*sizeof(char*));
 
 	char *buf = NULL;
 	size_t len = 0;
@@ -178,10 +194,13 @@ char** load_multiple_fasta(FILE* f_in, int *k, int_t *n){
 	int i;
  	for(i=0; i<*k; i++){
 
-		if(i!=count) return 0;
+		if(i!=count){
+			*k = i;
+			break;		
+		}
 
-		int nalloc = 128;
-		c_buffer[i] = (char*) malloc(nalloc*sizeof(char));
+		int c_alloc = 128;
+		c_buffer[i] = (char*) malloc(c_alloc*sizeof(char));
 
 		int_t p=0;
 		len = 0; buf=NULL;
@@ -192,9 +211,9 @@ char** load_multiple_fasta(FILE* f_in, int *k, int_t *n){
 				break;
 			}
 
-			if(p+len>nalloc){
-				nalloc += len+128;
-				c_buffer[i] = (char*) realloc(c_buffer[i], sizeof(char) * nalloc);
+			if(p+len>c_alloc){
+				c_alloc += len+128;
+				c_buffer[i] = (char*) realloc(c_buffer[i], sizeof(char) * c_alloc);
 			}
 
 			strcpy(&c_buffer[i][p], buf);
@@ -207,6 +226,11 @@ char** load_multiple_fasta(FILE* f_in, int *k, int_t *n){
 		free(buf);
 		c_buffer[i][p] = 0;
 		(*n) += p+1;
+
+		if(i==n_alloc-1){
+			n_alloc+=N_ALLOC;
+      c_buffer = (char**) realloc(c_buffer, n_alloc*sizeof(char*));
+		}
 	}
 
 return c_buffer;
