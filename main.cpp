@@ -918,12 +918,7 @@ int compute_all_bwsd_rank(unsigned char** R, uint_t k, uint_t n, char* c_file, i
 	//checksum: for the sake of sanity
 	if(check){
 		double sum=0.0;
-		#if OMP
-			#pragma omp parallel for reduction(+:sum) 
-		#endif
-		for(int_t i=0; i<k; i++)
-			for(int_t j=i+1; j<k; j++)
-				sum+=Result(i,j);
+		for(int i=0; i<m; i++) sum+=Md[i];
 
 		printf("checksum = %lf\n",sum);
 	}
@@ -1072,12 +1067,7 @@ int compute_all_bwsd(unsigned char** R, uint_t k, uint_t n, char* c_file, int di
 	//checksum: for the sake of sanity
 	if(check){
 		double sum=0.0;
-		#if OMP
-			#pragma omp parallel for reduction(+:sum) 
-		#endif
-		for(int_t i=0; i<k; i++)
-			for(int_t j=i+1; j<k; j++)
-				sum+=Result(i,j);
+		for(int i=0; i<m; i++) sum+=Md[i];
 
 		printf("checksum = %lf\n",sum);
 	}
@@ -1435,12 +1425,7 @@ int compute_all_bwsd_rmq_Nk(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	//checksum: for the sake of sanity
 	if(check){
 		double sum=0.0;
-		#if OMP
-			#pragma omp parallel for reduction(+:sum) 
-		#endif
-		for(int_t i=0; i<k; i++)
-			for(int_t j=i+1; j<k; j++)
-				sum+=Result(i,j);
+		for(int i=0; i<m; i++) sum+=Md[i];
 	
 		printf("checksum = %lf\n",sum);
 	}
@@ -1739,12 +1724,7 @@ int compute_all_bwsd_rmq_Nz(unsigned char** S, uint_t k, uint_t n, char* c_file,
 	//checksum: for the sake of sanity
 	if(check){
 		double sum=0.0;
-		#if OMP
-			#pragma omp parallel for reduction(+:sum) 
-		#endif
-		for(int_t i=0; i<k; i++)
-			for(int_t j=i+1; j<k; j++)
-				sum+=Result(i,j);
+		for(int i=0; i<m; i++) sum+=Md[i];
 	
 		printf("checksum = %lf\n",sum);
 	}
