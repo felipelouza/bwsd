@@ -1,6 +1,6 @@
 # bwsd: 
 
-This software is an implementation of the algorithms described in \[[1](https://github.com/felipelouza/bwsd#references)\] to compute all-pairs of **Burrows-Wheeler similarity distributions (BWSD)** for a string collection.
+This software is an implementation of the algorithms described in [1](https://link.springer.com/chapter/10.1007%2F978-3-030-00479-8_23) to compute all-pairs of **Burrows-Wheeler similarity distributions (BWSD)** for a string collection.
 
 Given a collection of _d_ strings, _bwsd_ computes a matrix M<sub>dxd</sub> with all pairs of BWSD-based distances.
 
@@ -113,19 +113,23 @@ Please, if you use this tool in an academic setting cite the following paper \[1
       title     = {Computing Burrows-Wheeler Similarity Distributions for String Collections},
       booktitle = {String Processing and Information Retrieval - 25th International Symposium,
                   {SPIRE} 2018, Proceedings},
-      pages     = {1--12},
+      pages     = {285-296},
       year      = {2018},
       series    = {Lecture Notes in Computer Science},
-      volume    = {},
+      volume    = {11147},
       publisher = {Springer}
     }
+
+## datasets
+
+We have used the following datasets in our experiments: https://github.com/felipelouza/bwsd/blob/master/experiments/dataset.tar.gz
 
 ## references
 
 \[1\] 
 Louza, Felipe A., Telles, Guilherme P., Gog, Simon, Liang Zhao (2018): 
 Computing Burrows-Wheeler Similarity Distributions for String Collections. 
-To appear in Proc. SPIRE 2018: 1-12.
+To appear in Proc. SPIRE 2018: 285-296, [SpringerLink](https://link.springer.com/chapter/10.1007%2F978-3-030-00479-8_23)
 
 \[2\] 
 Louza, Felipe A., Gog, Simon, Telles, Guilherme P. (2017). 
