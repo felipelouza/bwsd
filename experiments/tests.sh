@@ -1,43 +1,35 @@
+# vim: noai:ts=2:sw=2
 #! /bin/sh
 
-#sources
-#K=(	1500	3000	4500	6000	7500	9000	10500	12000	13500	150	17500	20000)
-#
-#D=(	"all_ests.fasta" 
-#		"reads.fastq" 
-#		"uniprot_trembl-201509.fasta"
-#		"wikipedia-SURF.txt")
+K=(	15	3000	4500	6000	7500	9000	10500	12000	13500	150	17500	20000)
 
-K=(	1500	3000	4500	6000	7500	9000	10500	12000	13500	100	17500	20000)
-
-D=(	"input.100.txt" 
-		"reads-10000.fastq" 
-		"uniprot.100.fasta"
-		"input.100.txt")
-
+D=(	"ests.fasta" 
+		"reads.fastq" 
+		"uniprot.fasta"
+		"wikipedia.txt")
 
 #threads
 T=(	1 2 4 8 16 32)
 
 ##
-host="jau"
-dir="dataset/"
-#workspace="/home/louza/Dropbox/workspace/"
-#dir="/mnt/data/bio/projects/gpt/text/"
-workspace="/home/gpt/saca/"
+host="home"
+dir="experiments/dataset/"
+workspace="../"
 exp="time"
 result=1
 ##
 
 #######################################################################
 
-#cd ${workspace}bwsd/
-cd ..
+tar xvfz dataset.tar.gz -C ./
+
+cd ${workspace} 
+pwd
 
 mkdir -p experiments/results 
 
 #strings
-for k in 9 #{0..9} 
+for k in 0 #{0..9} 
 do
 
 echo ""
@@ -53,13 +45,12 @@ echo "####"
 		path="experiments/results/${test}/"
 		mkdir -p ${path} 
 
-		#a=$(($d*7+$k))
 		a=$k
 
 		echo ${K[$a]}
 
 		#n. of threads
-		for t in {0..5}
+		for t in 0 #{0..5}
 		do
 
 			echo ""
@@ -98,14 +89,14 @@ echo "####"
 				./bwsd ${dir}${test} ${K[$a]} -A $j -T ${T[$t]}  -v >> ${output}
 			done
 	
-###	
-#			for j in 4 #MODE: Alg. 2 in O(n+z) time
-#			do
-#				echo " " >> ${output} 
-#				rm -f ${dir}sdsl/*
-#				./bwsd ${dir}${test} ${K[$a]} -A $j -T ${T[$t]}  -v >> ${output}
-#			done
-###	
+##	
+			for j in 4 #MODE: Alg. 2 in O(n+z) time
+			do
+				echo " " >> ${output} 
+				rm -f ${dir}sdsl/*
+				./bwsd ${dir}${test} ${K[$a]} -A $j -T ${T[$t]}  -v >> ${output}
+			done
+##	
 
 		done
 
