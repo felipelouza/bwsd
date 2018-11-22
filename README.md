@@ -1,6 +1,6 @@
 # bwsd: 
 
-This software is an implementation of the algorithms described in [1](https://link.springer.com/chapter/10.1007%2F978-3-030-00479-8_23) to compute all-pairs of **Burrows-Wheeler similarity distributions (BWSD)** for a string collection.
+This software is an implementation of the algorithms described in \[[1](https://link.springer.com/chapter/10.1007%2F978-3-030-00479-8_23)\] to compute all-pairs of **Burrows-Wheeler similarity distributions (BWSD)** for a string collection.
 
 Given a collection of _d_ strings, _bwsd_ computes a matrix M<sub>dxd</sub> with all pairs of BWSD-based distances.
 
