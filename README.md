@@ -1,6 +1,6 @@
 # bwsd: 
 
-This software is an implementation of the algorithms described in \[[1](https://link.springer.com/chapter/10.1007%2F978-3-030-00479-8_23)\] to compute all-pairs of **Burrows-Wheeler similarity distributions (BWSD)** for a string collection.
+This software is an implementation of the algorithms described in \[[1](https://www.sciencedirect.com/science/article/pii/S0304397519301653)\] to compute all-pairs of **Burrows-Wheeler similarity distributions (BWSD)** for a string collection.
 
 Given a collection of _d_ strings, _bwsd_ computes a matrix M<sub>dxd</sub> with all pairs of BWSD-based distances.
 
@@ -108,16 +108,15 @@ make DEBUG=1
 
 Please, if you use this tool in an academic setting cite the following paper \[1\]:
 
-    @inproceedings{LouzaTGZ18,
+    @article{LouzaTGZ19,
       author    = {Louza, Felipe A. and Telles, Guilherme P. and Gog, Simon and Zhao, Liang},
-      title     = {Computing Burrows-Wheeler Similarity Distributions for String Collections},
-      booktitle = {String Processing and Information Retrieval - 25th International Symposium,
-                  {SPIRE} 2018, Proceedings},
-      pages     = {285-296},
-      year      = {2018},
-      series    = {Lecture Notes in Computer Science},
-      volume    = {11147},
-      publisher = {Springer}
+      title     = {Algorithms to compute the Burrows-Wheeler Similarity Distribution},
+      journal   = {Theor. Comput. Sci.},
+      volume    = {782},
+      pages     = {145-156},
+      year      = {2019},
+      url       = {https://www.sciencedirect.com/science/article/pii/S0304397519301653},
+      doi       = {10.1016/j.tcs.2019.03.012},
     }
 
 ## datasets
@@ -127,9 +126,9 @@ We have used the following datasets in our experiments: https://github.com/felip
 ## references
 
 \[1\] 
-Louza, Felipe A., Telles, Guilherme P., Gog, Simon, Liang Zhao (2018): 
-Computing Burrows-Wheeler Similarity Distributions for String Collections. 
-To appear in Proc. SPIRE 2018: 285-296, [SpringerLink](https://link.springer.com/chapter/10.1007%2F978-3-030-00479-8_23)
+Louza, Felipe A., Telles, Guilherme P., Gog, Simon, Liang Zhao (2019): 
+Algorithms to compute the Burrows-Wheeler Similarity Distribution. 
+Theor. Comput. Sci. 782: 145-156 \[[ElsevierLink](https://www.sciencedirect.com/science/article/pii/S0304397519301653)\]
 
 \[2\] 
 Louza, Felipe A., Gog, Simon, Telles, Guilherme P. (2017). 
